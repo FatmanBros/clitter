@@ -86,12 +86,15 @@
   ).length + Object.values($whiteboardState.groups).filter(
     (g) => g.parentGroup === group.id
   ).length;
+
+  $: groupColor = group.color || "#3b82f6";
 </script>
 
 <div
   class="group-container"
   class:dragging={isDragging}
-  style="left: {group.position.x}px; top: {group.position.y}px;"
+  style="left: {group.position.x}px; top: {group.position.y}px;
+         background: {groupColor}15; border-color: {groupColor}50;"
   role="button"
   tabindex="0"
   on:mousedown={handleMouseDown}
@@ -99,18 +102,18 @@
   on:dblclick={handleDoubleClick}
 >
   {#if group.shortcut}
-    <div class="shortcut-badge">{group.shortcut}</div>
+    <div class="shortcut-badge" style="background: {groupColor};">{group.shortcut}</div>
   {/if}
 
-  <div class="group-header">
-    <button class="collapse-btn" on:click|stopPropagation={toggleCollapse}>
+  <div class="group-header" style="background: {groupColor}25; border-color: {groupColor}35;">
+    <button class="collapse-btn" style="color: {groupColor};" on:click|stopPropagation={toggleCollapse}>
       {#if group.collapsed}
         <ChevronRight size={14} strokeWidth={1.5} />
       {:else}
         <ChevronDown size={14} strokeWidth={1.5} />
       {/if}
     </button>
-    <Folder size={14} strokeWidth={1.5} />
+    <Folder size={14} strokeWidth={1.5} style="color: {groupColor};" />
     <span class="group-name">{group.name}</span>
     <span class="child-count">{childCount}</span>
   </div>
@@ -128,8 +131,7 @@
   .group-container {
     position: absolute;
     min-width: 180px;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid;
     border-radius: 8px;
     cursor: move;
     user-select: none;
@@ -150,7 +152,6 @@
     top: -8px;
     right: -8px;
     padding: 2px 6px;
-    background: #3b82f6;
     color: white;
     font-size: 10px;
     font-weight: 600;
@@ -162,10 +163,8 @@
     align-items: center;
     gap: 6px;
     padding: 8px 10px;
-    background: rgba(59, 130, 246, 0.15);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    border-bottom: 1px solid;
     border-radius: 8px 8px 0 0;
-    color: #60a5fa;
   }
 
   .collapse-btn {
@@ -177,12 +176,11 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #60a5fa;
     cursor: pointer;
   }
 
   .collapse-btn:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .group-name {
