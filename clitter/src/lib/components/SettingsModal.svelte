@@ -30,7 +30,9 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if $settingsModal.show}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="modal-backdrop" on:click={closeSettings}>
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div class="modal" on:click|stopPropagation>
       <div class="modal-header">
         <h3>Settings</h3>
