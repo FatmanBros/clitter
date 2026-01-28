@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X, Settings, GripVertical } from "lucide-svelte";
+  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X, Settings } from "lucide-svelte";
 
   import ClipboardList from "$lib/components/ClipboardList.svelte";
   import Whiteboard from "$lib/components/Whiteboard.svelte";
@@ -264,16 +264,14 @@
 <svelte:window on:keydown={handleKeydown} on:click={handleClick} />
 
 <main class="app-container">
-  <!-- Title bar -->
-  <div class="title-bar">
-    <button class="drag-handle" on:mousedown={startDrag}>
-      <GripVertical size={14} strokeWidth={1.5} />
-    </button>
+  <!-- Title bar (draggable) -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="title-bar" on:mousedown={startDrag}>
     <div class="title-spacer"></div>
-    <button class="title-btn" on:click={openSettings}>
+    <button class="title-btn" on:click|stopPropagation={openSettings}>
       <Settings size={14} strokeWidth={1.5} />
     </button>
-    <button class="title-btn close" on:click={() => getCurrentWindow().hide()}>
+    <button class="title-btn close" on:click|stopPropagation={() => getCurrentWindow().hide()}>
       <X size={14} strokeWidth={2} />
     </button>
   </div>
@@ -387,26 +385,10 @@
     background: rgba(0, 0, 0, 0.2);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
-  }
-
-  .drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: none;
-    color: #52525b;
     cursor: grab;
-    transition: color 0.15s ease;
   }
 
-  .drag-handle:hover {
-    color: #71717a;
-  }
-
-  .drag-handle:active {
+  .title-bar:active {
     cursor: grabbing;
   }
 
