@@ -26,8 +26,10 @@
     const name = prompt("Group name", "New Group");
     if (!name) return;
 
+    const parentGroup = get(focusedGroupId);
+
     try {
-      const group = await invoke("create_group", { name, position });
+      const group = await invoke("create_group", { name, position, parentGroup });
       whiteboardState.update((state) => {
         state.groups[(group as any).id] = group as any;
         return state;

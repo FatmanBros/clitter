@@ -148,11 +148,21 @@ export function appendToShortcutInput(char: string) {
   if (char === "/") {
     const currentInput = get(shortcutInput);
     if (currentInput) {
-      // Find matching group
       const shortcuts = get(allShortcuts);
-      const match = shortcuts.find(
-        (s) => s.type === "group" && s.shortcut.toLowerCase() === currentInput.toLowerCase()
+      const inputLower = currentInput.toLowerCase();
+
+      // First try to match by shortcut
+      let match = shortcuts.find(
+        (s) => s.type === "group" && s.shortcut.toLowerCase() === inputLower
       );
+
+      // If no shortcut match, try to match by group name
+      if (!match) {
+        match = shortcuts.find(
+          (s) => s.type === "group" && s.name.toLowerCase() === inputLower
+        );
+      }
+
       if (match) {
         enterGroup(match.id);
         return;

@@ -268,10 +268,10 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="title-bar" on:mousedown={startDrag}>
     <div class="title-spacer"></div>
-    <button class="title-btn" on:click|stopPropagation={openSettings}>
+    <button class="title-btn" on:mousedown|stopPropagation on:click={openSettings}>
       <Settings size={14} strokeWidth={1.5} />
     </button>
-    <button class="title-btn close" on:click|stopPropagation={() => getCurrentWindow().hide()}>
+    <button class="title-btn close" on:mousedown|stopPropagation on:click={() => getCurrentWindow().hide()}>
       <X size={14} strokeWidth={2} />
     </button>
   </div>

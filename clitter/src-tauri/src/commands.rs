@@ -229,11 +229,16 @@ pub async fn remove_from_whiteboard(id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn create_group(name: String, position: Position) -> Result<Group, String> {
+pub async fn create_group(name: String, position: Position, parent_group: Option<String>) -> Result<Group, String> {
     let state = APP_STATE.get().ok_or("App state not initialized")?;
     let storage = state.persistent_storage.read().await;
 
     let mut group = Group::new(name, position);
+
+    // Set parent group if provided
+    if let Some(pg) = parent_group {
+        group.parent_group = Some(Uuid::parse_str(&pg).map_err(|e| e.to_string())?);
+    }
 
     // Auto-generate sequential shortcut
     if let Some(storage) = storage.as_ref() {
