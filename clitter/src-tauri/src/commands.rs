@@ -49,10 +49,9 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
     // Mark this content as self-copied so monitor will skip it
     mark_as_self_copied(content.content_hash());
 
-    let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
-
     match &content.data {
         ClipboardData::Text { text, .. } => {
+            let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
         ClipboardData::Image { base64, width: stored_w, height: stored_h, .. } => {
@@ -64,35 +63,28 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
             let img = image::load_from_memory(&png_bytes).map_err(|e| format!("Failed to decode PNG: {}", e))?;
             let rgba = img.to_rgba8();
 
-            let width = rgba.width() as usize;
-            let height = rgba.height() as usize;
+            let width = rgba.width();
+            let height = rgba.height();
             let raw_bytes = rgba.into_raw();
             eprintln!("[copy_to_clipboard] RGBA size: {}x{}, bytes: {}", width, height, raw_bytes.len());
 
-            // Verify buffer size matches expected RGBA size
-            let expected_size = width * height * 4;
-            if raw_bytes.len() != expected_size {
-                return Err(format!(
-                    "RGBA buffer size mismatch: expected {} ({}x{}x4), got {}",
-                    expected_size, width, height, raw_bytes.len()
-                ));
+            // Use Windows native clipboard API for better compatibility
+            #[cfg(target_os = "windows")]
+            {
+                crate::clipboard::windows_clipboard::set_image_to_clipboard(&raw_bytes, width, height)?;
+                eprintln!("[copy_to_clipboard] Image set successfully via Windows API");
             }
 
-            let img_data = arboard::ImageData {
-                width,
-                height,
-                bytes: raw_bytes.into(),
-            };
-
-            // Use catch_unwind to prevent panic from crashing the app
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                clipboard.set_image(img_data)
-            }));
-
-            match result {
-                Ok(Ok(())) => eprintln!("[copy_to_clipboard] Image set successfully"),
-                Ok(Err(e)) => return Err(format!("Failed to set clipboard image: {}", e)),
-                Err(_) => return Err("Clipboard set_image panicked - this may be a bug in arboard".to_string()),
+            #[cfg(not(target_os = "windows"))]
+            {
+                let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
+                let img_data = arboard::ImageData {
+                    width: width as usize,
+                    height: height as usize,
+                    bytes: raw_bytes.into(),
+                };
+                clipboard.set_image(img_data).map_err(|e| e.to_string())?;
+                eprintln!("[copy_to_clipboard] Image set successfully via arboard");
             }
         }
     }
@@ -106,10 +98,9 @@ pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), S
     mark_as_self_copied(content.content_hash());
 
     // First copy to clipboard
-    let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
-
     match &content.data {
         ClipboardData::Text { text, .. } => {
+            let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
         ClipboardData::Image { base64, width: stored_w, height: stored_h, .. } => {
@@ -121,35 +112,28 @@ pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), S
             let img = image::load_from_memory(&png_bytes).map_err(|e| format!("Failed to decode PNG: {}", e))?;
             let rgba = img.to_rgba8();
 
-            let width = rgba.width() as usize;
-            let height = rgba.height() as usize;
+            let width = rgba.width();
+            let height = rgba.height();
             let raw_bytes = rgba.into_raw();
             eprintln!("[paste_to_previous_window] RGBA size: {}x{}, bytes: {}", width, height, raw_bytes.len());
 
-            // Verify buffer size matches expected RGBA size
-            let expected_size = width * height * 4;
-            if raw_bytes.len() != expected_size {
-                return Err(format!(
-                    "RGBA buffer size mismatch: expected {} ({}x{}x4), got {}",
-                    expected_size, width, height, raw_bytes.len()
-                ));
+            // Use Windows native clipboard API for better compatibility
+            #[cfg(target_os = "windows")]
+            {
+                crate::clipboard::windows_clipboard::set_image_to_clipboard(&raw_bytes, width, height)?;
+                eprintln!("[paste_to_previous_window] Image set successfully via Windows API");
             }
 
-            let img_data = arboard::ImageData {
-                width,
-                height,
-                bytes: raw_bytes.into(),
-            };
-
-            // Use catch_unwind to prevent panic from crashing the app
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                clipboard.set_image(img_data)
-            }));
-
-            match result {
-                Ok(Ok(())) => eprintln!("[paste_to_previous_window] Image set successfully"),
-                Ok(Err(e)) => return Err(format!("Failed to set clipboard image: {}", e)),
-                Err(_) => return Err("Clipboard set_image panicked - this may be a bug in arboard".to_string()),
+            #[cfg(not(target_os = "windows"))]
+            {
+                let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
+                let img_data = arboard::ImageData {
+                    width: width as usize,
+                    height: height as usize,
+                    bytes: raw_bytes.into(),
+                };
+                clipboard.set_image(img_data).map_err(|e| e.to_string())?;
+                eprintln!("[paste_to_previous_window] Image set successfully via arboard");
             }
         }
     }
