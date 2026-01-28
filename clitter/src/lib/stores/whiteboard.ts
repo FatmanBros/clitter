@@ -21,8 +21,13 @@ export const shortcutInput = writable<string>("");
 // Currently focused group (for hierarchical navigation)
 export const focusedGroupId = writable<string | null>(null);
 
-// Last exited group (for right arrow to re-enter)
-export const lastExitedGroupId = writable<string | null>(null);
+// History of exited groups (stack for right arrow navigation)
+export const exitedGroupHistory = writable<string[]>([]);
+
+// For backward compatibility
+export const lastExitedGroupId = derived(exitedGroupHistory, ($history) =>
+  $history.length > 0 ? $history[$history.length - 1] : null
+);
 
 // Get all shortcuts for matching
 export const allShortcuts = derived(
@@ -205,7 +210,7 @@ export function backspaceShortcutInput() {
   shortcutInput.update((s) => s.slice(0, -1));
 }
 
-export function enterGroup(groupId: string) {
+export function enterGroup(groupId: string, fromHistory: boolean = false) {
   const state = get(whiteboardState);
   const group = state.groups[groupId];
   if (group) {
@@ -213,14 +218,18 @@ export function enterGroup(groupId: string) {
     whiteboardState.set(state);
     focusedGroupId.set(groupId);
     shortcutInput.set("");
+    // Clear forward history when entering a group directly (not from right arrow)
+    if (!fromHistory) {
+      exitedGroupHistory.set([]);
+    }
   }
 }
 
 export function exitGroup() {
   const currentGroup = get(focusedGroupId);
   if (currentGroup) {
-    // Save the group we're exiting so we can re-enter with right arrow
-    lastExitedGroupId.set(currentGroup);
+    // Push to history stack so we can re-enter with right arrow
+    exitedGroupHistory.update((history) => [...history, currentGroup]);
 
     const state = get(whiteboardState);
     const group = state.groups[currentGroup];
@@ -234,12 +243,15 @@ export function exitGroup() {
 }
 
 export function reenterLastGroup() {
-  const lastGroup = get(lastExitedGroupId);
-  if (lastGroup) {
+  const history = get(exitedGroupHistory);
+  if (history.length > 0) {
+    const lastGroup = history[history.length - 1];
     const state = get(whiteboardState);
     if (state.groups[lastGroup]) {
-      enterGroup(lastGroup);
-      lastExitedGroupId.set(null);
+      // Pop from history
+      exitedGroupHistory.update((h) => h.slice(0, -1));
+      // Enter group without clearing history
+      enterGroup(lastGroup, true);
     }
   }
 }
