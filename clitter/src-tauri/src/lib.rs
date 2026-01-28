@@ -11,7 +11,6 @@ use tokio::sync::RwLock;
 
 pub static APP_STATE: OnceCell<AppState> = OnceCell::new();
 
-#[derive(Debug)]
 pub struct AppState {
     pub volatile_storage: VolatileStorage,
     pub persistent_storage: RwLock<Option<PersistentStorage>>,
@@ -37,7 +36,9 @@ impl Default for AppState {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
-    APP_STATE.set(app_state).expect("Failed to initialize app state");
+    if APP_STATE.set(app_state).is_err() {
+        panic!("Failed to initialize app state");
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
