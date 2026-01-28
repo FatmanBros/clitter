@@ -394,10 +394,10 @@
       <Whiteboard />
       <button
         class="nav-btn nav-bottom-single"
-        on:click={() => hideWindow()}
+        on:click={() => currentView.set("list")}
       >
-        <X size={16} strokeWidth={1.5} />
-        <span>Close</span>
+        <ChevronDown size={16} strokeWidth={1.5} />
+        <span>リスト</span>
       </button>
     </div>
   {/if}
