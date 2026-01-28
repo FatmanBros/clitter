@@ -116,7 +116,7 @@
 
   function hideWindow() {
     wasHidden = true;
-    hideWindow();
+    getCurrentWindow().hide();
   }
 
   async function copyHistoryItem(index: number) {
