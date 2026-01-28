@@ -112,8 +112,15 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    // Only close context menu on Escape
     if ($contextMenu.show) {
-      hideContextMenu();
+      if (event.key === "Escape") {
+        hideContextMenu();
+        event.preventDefault();
+        return;
+      }
+      // Don't process other keys while context menu is open
+      return;
     }
 
     if ($currentView === "list") {
