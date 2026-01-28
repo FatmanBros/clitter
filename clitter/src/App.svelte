@@ -116,9 +116,9 @@
     const items = $filteredHistory;
     if (index < items.length) {
       try {
-        // Hide window first, then paste to previous window
-        await getCurrentWindow().hide();
+        // Paste first, then hide (don't wait for hide)
         await invoke("paste_to_previous_window", { content: items[index] });
+        getCurrentWindow().hide();
       } catch (e) {
         console.error("Failed to paste:", e);
       }
@@ -129,9 +129,9 @@
     const item = $whiteboardState.items[itemId];
     if (item) {
       try {
-        // Hide window first, then paste to previous window
-        await getCurrentWindow().hide();
+        // Paste first, then hide (don't wait for hide)
         await invoke("paste_to_previous_window", { content: item.content });
+        getCurrentWindow().hide();
       } catch (e) {
         console.error("Failed to paste:", e);
       }

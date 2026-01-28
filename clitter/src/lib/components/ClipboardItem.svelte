@@ -18,9 +18,9 @@
 
   async function handleClick() {
     try {
-      // Hide window first, then paste to previous window
-      await getCurrentWindow().hide();
+      // Paste first, then hide (don't wait for hide)
       await invoke("paste_to_previous_window", { content: item });
+      getCurrentWindow().hide();
     } catch (e) {
       console.error("Failed to paste:", e);
     }
