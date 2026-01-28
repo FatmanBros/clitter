@@ -27,9 +27,14 @@
   }
 
   async function handlePasteItem() {
-    if ($contextMenu.target?.type !== "whiteboard") return;
+    console.log("handlePasteItem called, target:", $contextMenu.target);
+    if ($contextMenu.target?.type !== "whiteboard") {
+      console.log("Target is not whiteboard, returning");
+      return;
+    }
 
     const history = get(clipboardHistory);
+    console.log("Clipboard history length:", history.length);
     if (history.length === 0) {
       alert("No items in clipboard history");
       hideContextMenu();
@@ -38,9 +43,11 @@
 
     const position = $contextMenu.target.position;
     const content = history[0]; // Use most recent item
+    console.log("Adding item at position:", position, "content:", content);
 
     try {
       const item = await invoke("add_to_whiteboard", { content, position });
+      console.log("Item added successfully:", item);
       whiteboardState.update((state) => {
         state.items[(item as any).id] = item as any;
         if (!(item as any).parentGroup) {
