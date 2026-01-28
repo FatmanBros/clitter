@@ -186,6 +186,8 @@
         event.preventDefault();
         break;
       case "ArrowUp":
+      case "w":
+      case "W":
         currentView.set("whiteboard");
         event.preventDefault();
         break;
@@ -214,6 +216,19 @@
         currentView.set("list");
         event.preventDefault();
         break;
+      case "l":
+      case "L":
+        // Go to list if no input, otherwise append to input
+        if (!$shortcutInput) {
+          clearShortcutInput();
+          focusedGroupId.set(null);
+          currentView.set("list");
+          event.preventDefault();
+        } else {
+          appendToShortcutInput(event.key);
+          event.preventDefault();
+        }
+        return; // Early return to skip default case
       case "ArrowLeft":
         // Exit current group (go to parent)
         if ($focusedGroupId) {
