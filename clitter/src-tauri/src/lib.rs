@@ -5,6 +5,7 @@ pub mod hotkey;
 pub mod storage;
 pub mod tray;
 pub mod types;
+pub mod window_focus;
 
 use once_cell::sync::OnceCell;
 use storage::{persistent::PersistentStorage, volatile::VolatileStorage};
@@ -75,6 +76,7 @@ pub fn run() {
             commands::get_clipboard_history,
             commands::get_recent_items,
             commands::copy_to_clipboard,
+            commands::paste_to_previous_window,
             commands::get_whiteboard,
             commands::add_to_whiteboard,
             commands::update_whiteboard_item,

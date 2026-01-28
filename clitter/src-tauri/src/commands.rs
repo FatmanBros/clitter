@@ -2,6 +2,7 @@ use arboard::Clipboard;
 use uuid::Uuid;
 
 use crate::types::{Category, ClipboardContent, ClipboardData, Group, Position, Size, WhiteboardItem, WhiteboardState};
+use crate::window_focus;
 use crate::APP_STATE;
 
 #[tauri::command]
@@ -45,6 +46,32 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), String> {
+    // First copy to clipboard
+    let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
+
+    match &content.data {
+        ClipboardData::Text { text, .. } => {
+            clipboard.set_text(text).map_err(|e| e.to_string())?;
+        }
+        ClipboardData::Image { base64, width, height, .. } => {
+            use base64::{engine::general_purpose::STANDARD, Engine};
+            let bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+
+            let img_data = arboard::ImageData {
+                width: *width as usize,
+                height: *height as usize,
+                bytes: bytes.into(),
+            };
+            clipboard.set_image(img_data).map_err(|e| e.to_string())?;
+        }
+    }
+
+    // Then restore focus and paste
+    window_focus::restore_and_paste()
 }
 
 #[tauri::command]

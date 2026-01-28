@@ -91,10 +91,11 @@
     const items = $filteredHistory;
     if (index < items.length) {
       try {
-        await invoke("copy_to_clipboard", { content: items[index] });
+        // Hide window first, then paste to previous window
         await getCurrentWindow().hide();
+        await invoke("paste_to_previous_window", { content: items[index] });
       } catch (e) {
-        console.error("Failed to copy:", e);
+        console.error("Failed to paste:", e);
       }
     }
   }
@@ -103,10 +104,11 @@
     const item = $whiteboardState.items[itemId];
     if (item) {
       try {
-        await invoke("copy_to_clipboard", { content: item.content });
+        // Hide window first, then paste to previous window
         await getCurrentWindow().hide();
+        await invoke("paste_to_previous_window", { content: item.content });
       } catch (e) {
-        console.error("Failed to copy:", e);
+        console.error("Failed to paste:", e);
       }
     }
   }

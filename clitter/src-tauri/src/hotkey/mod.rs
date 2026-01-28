@@ -1,5 +1,6 @@
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use crate::window_focus;
 
 pub fn register_global_shortcuts(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // Alt+V: Toggle window visibility
@@ -16,6 +17,8 @@ pub fn register_global_shortcuts(app: &tauri::App) -> Result<(), Box<dyn std::er
                 if window.is_visible().unwrap_or(false) {
                     let _ = window.hide();
                 } else {
+                    // Save the current foreground window before showing Clitter
+                    window_focus::save_previous_window();
                     let _ = window.show();
                     let _ = window.set_focus();
                 }
