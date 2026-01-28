@@ -11,6 +11,7 @@ use tokio::sync::RwLock;
 
 pub static APP_STATE: OnceCell<AppState> = OnceCell::new();
 
+#[derive(Debug)]
 pub struct AppState {
     pub volatile_storage: VolatileStorage,
     pub persistent_storage: RwLock<Option<PersistentStorage>>,

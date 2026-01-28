@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate icons
+        run: npx tauri icon src-tauri/icons/icon.svg
+
       - name: Build Tauri app
         run: npm run tauri build
 
@@ -63,6 +66,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Generate icons
+        run: npx tauri icon src-tauri/icons/icon.svg
 
       - name: Build Tauri app
         run: npm run tauri build
@@ -99,6 +105,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Generate icons
+        run: npx tauri icon src-tauri/icons/icon.svg
 
       - name: Build Tauri app
         run: npm run tauri build
