@@ -99,9 +99,11 @@
   </div>
 
   <!-- Whiteboard canvas -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={whiteboardEl}
     class="flex-1 relative overflow-auto bg-gray-50"
+    role="application"
     on:contextmenu={handleContextMenu}
     on:drop={handleDrop}
     on:dragover={handleDragOver}

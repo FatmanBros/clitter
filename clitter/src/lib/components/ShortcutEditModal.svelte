@@ -64,10 +64,12 @@
       <h3 class="text-lg font-semibold mb-4">ショートカット設定</h3>
 
       <div class="mb-4">
-        <label class="block text-sm text-gray-600 mb-1">
+        <label class="block text-sm text-gray-600 mb-1" for="shortcut-input">
           ショートカット文字列
         </label>
+        <!-- svelte-ignore a11y_autofocus -->
         <input
+          id="shortcut-input"
           type="text"
           bind:value={inputValue}
           on:keydown={handleKeydown}

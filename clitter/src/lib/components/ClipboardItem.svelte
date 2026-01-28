@@ -66,7 +66,7 @@
     {#if item.data.type === "image"}
       <img
         src="data:image/{item.data.format};base64,{item.data.base64}"
-        alt="Clipboard image"
+        alt="Clipboard content"
         class="max-h-16 rounded"
       />
     {:else}

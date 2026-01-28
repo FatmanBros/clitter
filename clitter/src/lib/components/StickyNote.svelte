@@ -101,7 +101,7 @@
       {#if item.content.data.type === "image"}
         <img
           src="data:image/{item.content.data.format};base64,{item.content.data.base64}"
-          alt="Sticky note image"
+          alt="Sticky note content"
           class="max-w-full rounded"
         />
       {:else}

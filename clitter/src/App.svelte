@@ -170,9 +170,10 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} on:click={handleClick} />
 
-<main class="h-screen flex flex-col bg-white" on:click={handleClick}>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<main class="h-screen flex flex-col bg-white">
   <header class="px-4 py-2 border-b border-gray-200 flex items-center justify-between">
     <h1 class="text-lg font-semibold text-gray-800">Clitter</h1>
     {#if $currentView === "whiteboard"}
