@@ -1,6 +1,7 @@
 use arboard::Clipboard;
 use uuid::Uuid;
 
+use crate::clipboard::monitor::mark_as_self_copied;
 use crate::types::{Category, ClipboardContent, ClipboardData, Group, Position, Size, WhiteboardItem, WhiteboardState};
 use crate::window_focus;
 use crate::APP_STATE;
@@ -26,6 +27,9 @@ pub async fn get_recent_items(count: usize) -> Result<Vec<ClipboardContent>, Str
 
 #[tauri::command]
 pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> {
+    // Mark this content as self-copied so monitor will skip it
+    mark_as_self_copied(content.content_hash());
+
     let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
 
     match &content.data {
@@ -50,6 +54,9 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
 
 #[tauri::command]
 pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), String> {
+    // Mark this content as self-copied so monitor will skip it
+    mark_as_self_copied(content.content_hash());
+
     // First copy to clipboard
     let mut clipboard = Clipboard::new().map_err(|e| e.to_string())?;
 

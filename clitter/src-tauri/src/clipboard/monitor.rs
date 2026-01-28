@@ -9,6 +9,13 @@ use crate::types::{ClipboardContent, ClipboardData};
 use crate::APP_STATE;
 
 static LAST_CONTENT_HASH: AtomicU64 = AtomicU64::new(0);
+// Hash of content that was copied by Clitter itself (should be skipped)
+static SELF_COPIED_HASH: AtomicU64 = AtomicU64::new(0);
+
+/// Mark a content hash as self-copied (will be skipped by monitor)
+pub fn mark_as_self_copied(hash: u64) {
+    SELF_COPIED_HASH.store(hash, Ordering::Relaxed);
+}
 
 pub fn start_monitoring(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
@@ -58,9 +65,15 @@ fn check_clipboard_change(clipboard: &mut Clipboard) -> Option<ClipboardContent>
 
             let hash = content.content_hash();
             let last_hash = LAST_CONTENT_HASH.load(Ordering::Relaxed);
+            let self_copied_hash = SELF_COPIED_HASH.load(Ordering::Relaxed);
 
             if hash != last_hash {
                 LAST_CONTENT_HASH.store(hash, Ordering::Relaxed);
+                // Skip if this was copied by Clitter itself
+                if hash == self_copied_hash {
+                    SELF_COPIED_HASH.store(0, Ordering::Relaxed); // Reset
+                    return None;
+                }
                 return Some(content);
             }
         }
@@ -87,9 +100,15 @@ fn check_clipboard_change(clipboard: &mut Clipboard) -> Option<ClipboardContent>
         };
 
         let last_hash = LAST_CONTENT_HASH.load(Ordering::Relaxed);
+        let self_copied_hash = SELF_COPIED_HASH.load(Ordering::Relaxed);
 
         if hash != last_hash {
             LAST_CONTENT_HASH.store(hash, Ordering::Relaxed);
+            // Skip if this was copied by Clitter itself
+            if hash == self_copied_hash {
+                SELF_COPIED_HASH.store(0, Ordering::Relaxed); // Reset
+                return None;
+            }
 
             let content = ClipboardContent::new_image(
                 base64,
