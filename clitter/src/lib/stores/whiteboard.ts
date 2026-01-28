@@ -105,11 +105,21 @@ export const exactMatch = derived(
   [allShortcuts, shortcutInput],
   ([$shortcuts, $input]) => {
     if (!$input) return null;
-    return (
-      $shortcuts.find(
-        (s) => s.shortcut.toLowerCase() === $input.toLowerCase()
-      ) || null
+    const inputLower = $input.toLowerCase();
+
+    // First try to match by shortcut
+    let match = $shortcuts.find(
+      (s) => s.shortcut.toLowerCase() === inputLower
     );
+
+    // If no shortcut match, try to match groups by name
+    if (!match) {
+      match = $shortcuts.find(
+        (s) => s.type === "group" && s.name.toLowerCase() === inputLower
+      );
+    }
+
+    return match || null;
   }
 );
 
