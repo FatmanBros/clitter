@@ -109,9 +109,11 @@
 </script>
 
 {#if $contextMenu.show}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div
     class="context-menu"
     style="left: {$contextMenu.x}px; top: {$contextMenu.y}px;"
+    on:click|stopPropagation
   >
     {#if $contextMenu.target?.type === "whiteboard"}
       <button class="menu-item" on:click={handlePasteItem}>
