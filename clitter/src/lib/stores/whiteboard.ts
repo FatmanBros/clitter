@@ -117,12 +117,50 @@ function getItemPreview(item: WhiteboardItem): string {
   return "[画像]";
 }
 
+// Get the full path of groups from root to current focused group
+export const groupPath = derived(
+  [whiteboardState, focusedGroupId],
+  ([$state, $focusedGroup]) => {
+    const path: Array<{ id: string; name: string; color: string | null }> = [];
+    let currentId = $focusedGroup;
+
+    while (currentId) {
+      const group = $state.groups[currentId];
+      if (group) {
+        path.unshift({ id: group.id, name: group.name, color: group.color });
+        currentId = group.parentGroup;
+      } else {
+        break;
+      }
+    }
+
+    return path;
+  }
+);
+
 // Actions
 export function clearShortcutInput() {
   shortcutInput.set("");
 }
 
 export function appendToShortcutInput(char: string) {
+  // Handle "/" to enter group
+  if (char === "/") {
+    const currentInput = get(shortcutInput);
+    if (currentInput) {
+      // Find matching group
+      const shortcuts = get(allShortcuts);
+      const match = shortcuts.find(
+        (s) => s.type === "group" && s.shortcut.toLowerCase() === currentInput.toLowerCase()
+      );
+      if (match) {
+        enterGroup(match.id);
+        return;
+      }
+    }
+    // If no match or empty input, ignore "/"
+    return;
+  }
   shortcutInput.update((s) => s + char);
 }
 

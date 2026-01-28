@@ -1,10 +1,23 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { FolderPlus, Keyboard, Trash2, ClipboardPaste } from "lucide-svelte";
+  import { FolderPlus, Keyboard, Trash2, ClipboardPaste, Palette, Plus, Upload } from "lucide-svelte";
   import { contextMenu, hideContextMenu, openShortcutEdit } from "$lib/stores/ui";
-  import { whiteboardState } from "$lib/stores/whiteboard";
+  import { whiteboardState, focusedGroupId } from "$lib/stores/whiteboard";
   import { clipboardHistory } from "$lib/stores/clipboard";
   import { get } from "svelte/store";
+
+  const colorOptions = [
+    { name: "None", value: null },
+    { name: "Red", value: "#ef4444" },
+    { name: "Orange", value: "#f97316" },
+    { name: "Yellow", value: "#eab308" },
+    { name: "Green", value: "#22c55e" },
+    { name: "Blue", value: "#3b82f6" },
+    { name: "Purple", value: "#a855f7" },
+    { name: "Pink", value: "#ec4899" },
+  ];
+
+  let showColorPicker = false;
 
   async function handleAddGroup() {
     if ($contextMenu.target?.type !== "whiteboard") return;
@@ -106,6 +119,84 @@
 
     hideContextMenu();
   }
+
+  function toggleColorPicker() {
+    showColorPicker = !showColorPicker;
+  }
+
+  async function handleSetColor(color: string | null) {
+    if ($contextMenu.target?.type !== "group") return;
+
+    const targetId = $contextMenu.target.id;
+    try {
+      await invoke("set_group_color", { id: targetId, color });
+      whiteboardState.update((state) => {
+        if (state.groups[targetId]) {
+          state.groups[targetId].color = color;
+        }
+        return state;
+      });
+    } catch (e) {
+      console.error("Failed to set group color:", e);
+    }
+
+    showColorPicker = false;
+    hideContextMenu();
+  }
+
+  async function handleSetValue() {
+    if ($contextMenu.target?.type !== "whiteboard") return;
+
+    const value = prompt("Enter value");
+    if (value === null || value === "") return;
+
+    const position = $contextMenu.target.position;
+    const parentGroup = get(focusedGroupId);
+
+    try {
+      const item = await invoke("add_text_to_whiteboard", {
+        text: value,
+        position,
+        parentGroup
+      });
+      whiteboardState.update((state) => {
+        state.items[(item as any).id] = item as any;
+        if (!(item as any).parentGroup) {
+          state.rootItems.push((item as any).id);
+        }
+        return state;
+      });
+    } catch (e) {
+      console.error("Failed to add value:", e);
+    }
+
+    hideContextMenu();
+  }
+
+  async function handleImportJson() {
+    hideContextMenu();
+
+    // Create a hidden file input
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const newState = await invoke("import_whiteboard_json", { json: text });
+        whiteboardState.set(newState as any);
+      } catch (err) {
+        console.error("Failed to import JSON:", err);
+        alert("Failed to import JSON: " + err);
+      }
+    };
+
+    input.click();
+  }
 </script>
 
 {#if $contextMenu.show}
@@ -116,6 +207,10 @@
     on:click|stopPropagation
   >
     {#if $contextMenu.target?.type === "whiteboard"}
+      <button class="menu-item" on:click={handleSetValue}>
+        <Plus size={14} strokeWidth={1.5} />
+        Set Value
+      </button>
       <button class="menu-item" on:click={handlePasteItem}>
         <ClipboardPaste size={14} strokeWidth={1.5} />
         Paste Item
@@ -123,6 +218,40 @@
       <button class="menu-item" on:click={handleAddGroup}>
         <FolderPlus size={14} strokeWidth={1.5} />
         Add Group
+      </button>
+      <hr class="divider" />
+      <button class="menu-item" on:click={handleImportJson}>
+        <Upload size={14} strokeWidth={1.5} />
+        Import JSON
+      </button>
+    {:else if $contextMenu.target?.type === "group"}
+      <button class="menu-item" on:click={handleSetShortcut}>
+        <Keyboard size={14} strokeWidth={1.5} />
+        Set Shortcut
+      </button>
+      <button class="menu-item" on:click={toggleColorPicker}>
+        <Palette size={14} strokeWidth={1.5} />
+        Set Color
+      </button>
+      {#if showColorPicker}
+        <div class="color-picker">
+          {#each colorOptions as option}
+            <button
+              class="color-option"
+              style={option.value ? `background-color: ${option.value}` : ''}
+              class:no-color={!option.value}
+              on:click={() => handleSetColor(option.value)}
+              title={option.name}
+            >
+              {#if !option.value}×{/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
+      <hr class="divider" />
+      <button class="menu-item danger" on:click={handleDelete}>
+        <Trash2 size={14} strokeWidth={1.5} />
+        Delete
       </button>
     {:else}
       <button class="menu-item" on:click={handleSetShortcut}>
@@ -183,5 +312,35 @@
     border: none;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     margin: 4px 0;
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 4px;
+    padding: 6px 12px;
+    flex-wrap: wrap;
+  }
+
+  .color-option {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+    font-size: 12px;
+    color: #71717a;
+  }
+
+  .color-option:hover {
+    transform: scale(1.15);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .color-option.no-color {
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>

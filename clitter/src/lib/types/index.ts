@@ -59,6 +59,7 @@ export interface Group {
   parentGroup: string | null;
   children: string[];
   shortcut: string | null;
+  color: string | null; // Hex color for group
   createdAt: string;
   updatedAt: string;
 }

@@ -79,13 +79,16 @@ pub fn run() {
             commands::paste_to_previous_window,
             commands::get_whiteboard,
             commands::add_to_whiteboard,
+            commands::add_text_to_whiteboard,
             commands::update_whiteboard_item,
             commands::remove_from_whiteboard,
             commands::create_group,
             commands::update_group,
             commands::delete_group,
+            commands::set_group_color,
             commands::set_item_shortcut,
             commands::get_items_with_shortcuts,
+            commands::import_whiteboard_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

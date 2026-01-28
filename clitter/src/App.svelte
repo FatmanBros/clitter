@@ -242,7 +242,7 @@
         event.preventDefault();
         break;
       default:
-        if (event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key)) {
+        if (event.key.length === 1 && /[a-zA-Z0-9\/]/.test(event.key)) {
           appendToShortcutInput(event.key);
           event.preventDefault();
         }

@@ -152,6 +152,7 @@ pub struct Group {
     pub parent_group: Option<Uuid>,
     pub children: Vec<Uuid>,
     pub shortcut: Option<String>,
+    pub color: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -167,6 +168,7 @@ impl Group {
             parent_group: None,
             children: Vec::new(),
             shortcut: None,
+            color: None,
             created_at: now,
             updated_at: now,
         }

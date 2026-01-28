@@ -134,6 +134,11 @@ impl PersistentStorage {
             .execute(pool)
             .await?;
 
+        // Add color column to groups if not exists
+        let _ = sqlx::query("ALTER TABLE groups ADD COLUMN color TEXT")
+            .execute(pool)
+            .await;
+
         Ok(())
     }
 
@@ -217,8 +222,8 @@ impl PersistentStorage {
         sqlx::query(
             r#"
             INSERT OR REPLACE INTO groups
-            (id, name, position_x, position_y, collapsed, parent_group_id, shortcut, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, name, position_x, position_y, collapsed, parent_group_id, shortcut, color, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(group.id.to_string())
@@ -228,6 +233,7 @@ impl PersistentStorage {
         .bind(group.collapsed)
         .bind(group.parent_group.map(|id| id.to_string()))
         .bind(&group.shortcut)
+        .bind(&group.color)
         .bind(group.created_at.to_rfc3339())
         .bind(group.updated_at.to_rfc3339())
         .execute(&self.pool)
@@ -241,7 +247,7 @@ impl PersistentStorage {
 
         // Load groups
         let group_rows = sqlx::query(
-            "SELECT id, name, position_x, position_y, collapsed, parent_group_id, shortcut, created_at, updated_at FROM groups",
+            "SELECT id, name, position_x, position_y, collapsed, parent_group_id, shortcut, color, created_at, updated_at FROM groups",
         )
         .fetch_all(&self.pool)
         .await?;
@@ -264,6 +270,7 @@ impl PersistentStorage {
                 parent_group,
                 children: Vec::new(),
                 shortcut: row.get("shortcut"),
+                color: row.get("color"),
                 created_at: chrono::DateTime::parse_from_rfc3339(row.get("created_at"))
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .unwrap_or_else(|_| chrono::Utc::now()),
@@ -421,5 +428,38 @@ impl PersistentStorage {
         }
 
         Ok(result)
+    }
+
+    pub async fn update_group_color(
+        &self,
+        id: Uuid,
+        color: Option<String>,
+    ) -> Result<(), StorageError> {
+        sqlx::query("UPDATE groups SET color = ?, updated_at = ? WHERE id = ?")
+            .bind(color)
+            .bind(chrono::Utc::now().to_rfc3339())
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_next_shortcut_number(&self) -> Result<i32, StorageError> {
+        // Get all numeric shortcuts and find the max
+        let rows = sqlx::query("SELECT shortcut FROM whiteboard_items WHERE shortcut IS NOT NULL")
+            .fetch_all(&self.pool)
+            .await?;
+
+        let mut max_num = 0;
+        for row in rows {
+            let shortcut: String = row.get("shortcut");
+            if let Ok(num) = shortcut.parse::<i32>() {
+                if num > max_num {
+                    max_num = num;
+                }
+            }
+        }
+
+        Ok(max_num + 1)
     }
 }

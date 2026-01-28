@@ -6,6 +6,7 @@
     shortcutInput,
     matchedShortcuts,
     focusedGroupId,
+    groupPath,
   } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
   import StickyNote from "./StickyNote.svelte";
@@ -63,20 +64,27 @@
     (group) => group.parentGroup === $focusedGroupId
   );
 
-  $: currentGroupName = $focusedGroupId
-    ? $whiteboardState.groups[$focusedGroupId]?.name
-    : null;
 </script>
 
 <div class="whiteboard-wrapper">
   <!-- Shortcut input display -->
   <div class="shortcut-bar">
     <div class="shortcut-input">
-      {#if currentGroupName}
-        <span class="group-path">
+      {#if $groupPath.length > 0}
+        <span class="path-root">
           <FolderOpen size={12} strokeWidth={1.5} />
-          {currentGroupName}
         </span>
+        {#each $groupPath as segment, i}
+          {#if i > 0}
+            <span class="separator">/</span>
+          {/if}
+          <span
+            class="group-segment"
+            style={segment.color ? `background-color: ${segment.color}22; border-color: ${segment.color}66;` : ''}
+          >
+            {segment.name}
+          </span>
+        {/each}
         <span class="separator">/</span>
       {/if}
       <span class="input-text">{$shortcutInput || "_"}</span>
@@ -140,16 +148,24 @@
   .shortcut-input {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     font-size: 14px;
+    flex-wrap: wrap;
   }
 
-  .group-path {
+  .path-root {
     display: flex;
     align-items: center;
-    gap: 4px;
     color: #71717a;
+  }
+
+  .group-segment {
+    padding: 2px 8px;
+    border-radius: 4px;
     font-size: 12px;
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
   .separator {
