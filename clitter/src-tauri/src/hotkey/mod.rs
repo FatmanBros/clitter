@@ -20,7 +20,8 @@ pub fn register_global_shortcuts(app: &tauri::App) -> Result<(), Box<dyn std::er
                     // Save the current foreground window before showing Clitter
                     window_focus::save_previous_window();
                     let _ = window.show();
-                    let _ = window.set_focus();
+                    // Don't set focus - let the window appear without stealing focus
+                    // This allows inline editing (like file rename) to continue
                 }
             }
         }) {
