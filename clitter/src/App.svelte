@@ -308,15 +308,13 @@
   .app-container {
     height: 100vh;
     width: 100vw;
-    background: rgba(24, 24, 27, 0.92);
+    background: rgba(24, 24, 27, 0.95);
     backdrop-filter: blur(12px);
     color: #e4e4e7;
     user-select: none;
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .layout-grid {
