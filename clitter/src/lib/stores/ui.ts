@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, get } from "svelte/store";
 import type { ViewMode, ContextMenuState } from "$lib/types";
 
 // Current view mode
@@ -23,6 +23,46 @@ export const shortcutEditModal = writable<{
   targetType: null,
   targetId: null,
   currentShortcut: "",
+});
+
+// Settings modal
+export const settingsModal = writable<{ show: boolean }>({ show: false });
+
+// Window sizes
+export interface WindowSizes {
+  list: { width: number; height: number };
+  whiteboard: { width: number; height: number };
+}
+
+const DEFAULT_SIZES: WindowSizes = {
+  list: { width: 400, height: 500 },
+  whiteboard: { width: 600, height: 700 },
+};
+
+function loadSizes(): WindowSizes {
+  try {
+    const saved = localStorage.getItem("clitter-window-sizes");
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Failed to load window sizes:", e);
+  }
+  return DEFAULT_SIZES;
+}
+
+function saveSizes(sizes: WindowSizes) {
+  try {
+    localStorage.setItem("clitter-window-sizes", JSON.stringify(sizes));
+  } catch (e) {
+    console.error("Failed to save window sizes:", e);
+  }
+}
+
+export const windowSizes = writable<WindowSizes>(loadSizes());
+
+windowSizes.subscribe((sizes) => {
+  saveSizes(sizes);
 });
 
 // Actions
@@ -53,4 +93,19 @@ export function openShortcutEdit(
 
 export function closeShortcutEdit() {
   shortcutEditModal.update((s) => ({ ...s, show: false }));
+}
+
+export function openSettings() {
+  settingsModal.set({ show: true });
+}
+
+export function closeSettings() {
+  settingsModal.set({ show: false });
+}
+
+export function updateWindowSize(mode: "list" | "whiteboard", width: number, height: number) {
+  windowSizes.update((sizes) => ({
+    ...sizes,
+    [mode]: { width, height },
+  }));
 }

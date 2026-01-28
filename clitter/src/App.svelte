@@ -3,20 +3,20 @@
   import { listen } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X } from "lucide-svelte";
+  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X, Settings, GripVertical } from "lucide-svelte";
 
   import ClipboardList from "$lib/components/ClipboardList.svelte";
   import Whiteboard from "$lib/components/Whiteboard.svelte";
   import ContextMenu from "$lib/components/ContextMenu.svelte";
   import ShortcutEditModal from "$lib/components/ShortcutEditModal.svelte";
+  import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
     exactMatch,
-    matchedShortcuts,
     clearShortcutInput,
     appendToShortcutInput,
     backspaceShortcutInput,
@@ -26,12 +26,22 @@
   } from "$lib/stores/whiteboard";
   import type { ClipboardContent } from "$lib/types";
 
+  async function applyWindowSize(mode: "list" | "whiteboard") {
+    const sizes = $windowSizes[mode];
+    const window = getCurrentWindow();
+    await window.setSize(new (await import("@tauri-apps/api/dpi")).LogicalSize(sizes.width, sizes.height));
+  }
+
+  // Watch for view changes and apply window size
+  $: if ($currentView) {
+    applyWindowSize($currentView);
+  }
+
   onMount(async () => {
     await listen<ClipboardContent>("clipboard-changed", (event) => {
       clipboardHistory.update((history) => [event.payload, ...history].slice(0, 100));
     });
 
-    // Reset to list view and "all" category when window is shown
     const currentWindow = getCurrentWindow();
     await currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused) {
@@ -50,6 +60,10 @@
       console.error("Failed to load initial data:", e);
     }
   });
+
+  async function startDrag() {
+    await getCurrentWindow().startDragging();
+  }
 
   async function copyHistoryItem(index: number) {
     const items = $filteredHistory;
@@ -188,10 +202,19 @@
 <svelte:window on:keydown={handleKeydown} on:click={handleClick} />
 
 <main class="app-container">
-  <!-- Close button -->
-  <button class="close-btn" on:click={() => getCurrentWindow().hide()}>
-    <X size={14} strokeWidth={2} />
-  </button>
+  <!-- Title bar -->
+  <div class="title-bar">
+    <button class="drag-handle" on:mousedown={startDrag}>
+      <GripVertical size={14} strokeWidth={1.5} />
+    </button>
+    <div class="title-spacer"></div>
+    <button class="title-btn" on:click={openSettings}>
+      <Settings size={14} strokeWidth={1.5} />
+    </button>
+    <button class="title-btn close" on:click={() => getCurrentWindow().hide()}>
+      <X size={14} strokeWidth={2} />
+    </button>
+  </div>
 
   {#if $currentView === "list"}
     <!-- List View -->
@@ -273,6 +296,7 @@
 
   <ContextMenu />
   <ShortcutEditModal />
+  <SettingsModal />
 </main>
 
 <style>
@@ -280,29 +304,6 @@
     margin: 0;
     padding: 0;
     background: transparent;
-  }
-
-  .close-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.05);
-    border: none;
-    border-radius: 6px;
-    color: #71717a;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .close-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
   }
 
   .app-container {
@@ -317,6 +318,63 @@
     overflow: hidden;
   }
 
+  .title-bar {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+  }
+
+  .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #52525b;
+    cursor: grab;
+    transition: color 0.15s ease;
+  }
+
+  .drag-handle:hover {
+    color: #71717a;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .title-spacer {
+    flex: 1;
+  }
+
+  .title-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #71717a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .title-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #a1a1aa;
+  }
+
+  .title-btn.close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+
   .layout-grid {
     display: grid;
     grid-template-areas:
@@ -325,7 +383,7 @@
       ". bottom .";
     grid-template-columns: 48px 1fr 48px;
     grid-template-rows: 40px 1fr 48px;
-    height: 100%;
+    flex: 1;
     gap: 0;
   }
 
