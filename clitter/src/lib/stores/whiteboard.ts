@@ -21,6 +21,9 @@ export const shortcutInput = writable<string>("");
 // Currently focused group (for hierarchical navigation)
 export const focusedGroupId = writable<string | null>(null);
 
+// Last exited group (for right arrow to re-enter)
+export const lastExitedGroupId = writable<string | null>(null);
+
 // Get all shortcuts for matching
 export const allShortcuts = derived(
   [whiteboardState, focusedGroupId],
@@ -192,6 +195,9 @@ export function enterGroup(groupId: string) {
 export function exitGroup() {
   const currentGroup = get(focusedGroupId);
   if (currentGroup) {
+    // Save the group we're exiting so we can re-enter with right arrow
+    lastExitedGroupId.set(currentGroup);
+
     const state = get(whiteboardState);
     const group = state.groups[currentGroup];
     if (group?.parentGroup) {
@@ -200,5 +206,16 @@ export function exitGroup() {
       focusedGroupId.set(null);
     }
     shortcutInput.set("");
+  }
+}
+
+export function reenterLastGroup() {
+  const lastGroup = get(lastExitedGroupId);
+  if (lastGroup) {
+    const state = get(whiteboardState);
+    if (state.groups[lastGroup]) {
+      enterGroup(lastGroup);
+      lastExitedGroupId.set(null);
+    }
   }
 }

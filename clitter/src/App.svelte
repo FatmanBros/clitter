@@ -22,7 +22,9 @@
     backspaceShortcutInput,
     enterGroup,
     exitGroup,
+    reenterLastGroup,
     focusedGroupId,
+    lastExitedGroupId,
   } from "$lib/stores/whiteboard";
   import type { ClipboardContent, ViewMode } from "$lib/types";
 
@@ -210,6 +212,20 @@
         clearShortcutInput();
         focusedGroupId.set(null);
         currentView.set("list");
+        event.preventDefault();
+        break;
+      case "ArrowLeft":
+        // Exit current group (go to parent)
+        if ($focusedGroupId) {
+          exitGroup();
+        }
+        event.preventDefault();
+        break;
+      case "ArrowRight":
+        // Re-enter last exited group
+        if ($lastExitedGroupId) {
+          reenterLastGroup();
+        }
         event.preventDefault();
         break;
       case "Escape":
