@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3 } from "lucide-svelte";
+  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X } from "lucide-svelte";
 
   import ClipboardList from "$lib/components/ClipboardList.svelte";
   import Whiteboard from "$lib/components/Whiteboard.svelte";
@@ -29,6 +29,15 @@
   onMount(async () => {
     await listen<ClipboardContent>("clipboard-changed", (event) => {
       clipboardHistory.update((history) => [event.payload, ...history].slice(0, 100));
+    });
+
+    // Reset to list view and "all" category when window is shown
+    const currentWindow = getCurrentWindow();
+    await currentWindow.onFocusChanged(({ payload: focused }) => {
+      if (focused) {
+        currentView.set("list");
+        selectedCategory.set(null);
+      }
     });
 
     try {
@@ -179,6 +188,11 @@
 <svelte:window on:keydown={handleKeydown} on:click={handleClick} />
 
 <main class="app-container">
+  <!-- Close button -->
+  <button class="close-btn" on:click={() => getCurrentWindow().hide()}>
+    <X size={14} strokeWidth={2} />
+  </button>
+
   {#if $currentView === "list"}
     <!-- List View -->
     <div class="layout-grid">
@@ -266,6 +280,29 @@
     margin: 0;
     padding: 0;
     background: transparent;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+    color: #71717a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
   }
 
   .app-container {
