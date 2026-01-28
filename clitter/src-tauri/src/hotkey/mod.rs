@@ -5,7 +5,7 @@ pub fn register_global_shortcuts(app: &tauri::App) -> Result<(), Box<dyn std::er
     // Alt+V: Toggle window visibility
     let toggle_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyV);
 
-    app.global_shortcut()
+    match app.global_shortcut()
         .on_shortcut(toggle_shortcut, |app, _shortcut, _event| {
             if let Some(window) = app.get_webview_window("main") {
                 if window.is_visible().unwrap_or(false) {
@@ -15,7 +15,10 @@ pub fn register_global_shortcuts(app: &tauri::App) -> Result<(), Box<dyn std::er
                     let _ = window.set_focus();
                 }
             }
-        })?;
+        }) {
+        Ok(_) => println!("Global shortcut Alt+V registered successfully"),
+        Err(e) => eprintln!("Failed to register global shortcut: {}", e),
+    }
 
     Ok(())
 }
