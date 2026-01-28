@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { Image, Type, Hash, Lock } from "lucide-svelte";
   import { whiteboardState } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
@@ -8,6 +9,7 @@
   export let item: WhiteboardItem;
 
   let isDragging = false;
+  let hasMoved = false;
   let startPos = { x: 0, y: 0 };
   let startItemPos = { x: 0, y: 0 };
 
@@ -21,6 +23,7 @@
   function handleMouseDown(event: MouseEvent) {
     if (event.button !== 0) return;
     isDragging = true;
+    hasMoved = false;
     startPos = { x: event.clientX, y: event.clientY };
     startItemPos = { x: item.position.x, y: item.position.y };
     window.addEventListener("mousemove", handleMouseMove);
@@ -32,15 +35,22 @@
     const dx = event.clientX - startPos.x;
     const dy = event.clientY - startPos.y;
 
-    whiteboardState.update((state) => {
-      if (state.items[item.id]) {
-        state.items[item.id].position = {
-          x: Math.max(0, startItemPos.x + dx),
-          y: Math.max(0, startItemPos.y + dy),
-        };
-      }
-      return state;
-    });
+    // Only consider it a move if we've moved more than 5 pixels
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      hasMoved = true;
+    }
+
+    if (hasMoved) {
+      whiteboardState.update((state) => {
+        if (state.items[item.id]) {
+          state.items[item.id].position = {
+            x: Math.max(0, startItemPos.x + dx),
+            y: Math.max(0, startItemPos.y + dy),
+          };
+        }
+        return state;
+      });
+    }
   }
 
   async function handleMouseUp() {
@@ -49,13 +59,28 @@
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", handleMouseUp);
 
+    if (hasMoved) {
+      // Save position after drag
+      try {
+        await invoke("update_whiteboard_item", {
+          id: item.id,
+          position: item.position,
+        });
+      } catch (e) {
+        console.error("Failed to update position:", e);
+      }
+    } else {
+      // It was a click - paste the content
+      await pasteContent();
+    }
+  }
+
+  async function pasteContent() {
     try {
-      await invoke("update_whiteboard_item", {
-        id: item.id,
-        position: item.position,
-      });
+      await invoke("paste_to_previous_window", { content: item.content });
+      getCurrentWindow().hide();
     } catch (e) {
-      console.error("Failed to update position:", e);
+      console.error("Failed to paste:", e);
     }
   }
 
@@ -93,7 +118,7 @@
   class="sticky-note {categoryClass}"
   class:dragging={isDragging}
   style="left: {item.position.x}px; top: {item.position.y}px;
-         width: {item.size.width}px; min-height: {item.size.height}px;"
+         width: {item.size.width}px;"
   role="button"
   tabindex="0"
   on:mousedown={handleMouseDown}
@@ -127,9 +152,9 @@
 <style>
   .sticky-note {
     position: absolute;
-    border-radius: 6px;
-    padding: 8px;
-    cursor: move;
+    border-radius: 4px;
+    padding: 6px;
+    cursor: pointer;
     user-select: none;
     transition: box-shadow 0.15s ease, transform 0.1s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -166,26 +191,26 @@
 
   .shortcut-badge {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    padding: 2px 6px;
+    top: -6px;
+    right: -6px;
+    padding: 1px 4px;
     background: #3b82f6;
     color: white;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   .note-content {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: 4px;
   }
 
   .category-icon {
     color: #71717a;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 1px;
   }
 
   .preview {
@@ -195,21 +220,24 @@
   }
 
   .label-text {
-    margin: 0 0 4px 0;
-    font-size: 11px;
+    margin: 0 0 2px 0;
+    font-size: 10px;
     font-weight: 600;
     color: #a1a1aa;
   }
 
   .preview-text {
     margin: 0;
-    font-size: 12px;
+    font-size: 10px;
     color: #d4d4d8;
     word-wrap: break-word;
+    line-height: 1.3;
   }
 
   .preview-image {
     max-width: 100%;
-    border-radius: 4px;
+    max-height: 40px;
+    border-radius: 2px;
+    object-fit: contain;
   }
 </style>

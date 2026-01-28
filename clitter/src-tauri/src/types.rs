@@ -132,8 +132,8 @@ impl WhiteboardItem {
             content,
             position,
             size: Size {
-                width: 200.0,
-                height: 150.0,
+                width: 120.0,
+                height: 60.0,
             },
             parent_group: None,
             shortcut: None,
