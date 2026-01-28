@@ -3,6 +3,7 @@ pub mod commands;
 pub mod crypto;
 pub mod hotkey;
 pub mod storage;
+pub mod tray;
 pub mod types;
 
 use once_cell::sync::OnceCell;
@@ -44,6 +45,9 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            // Setup system tray
+            tray::setup_tray(app)?;
+
             hotkey::register_global_shortcuts(app)?;
 
             // Initialize persistent storage in background

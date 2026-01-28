@@ -9,9 +9,12 @@
     "core:window:allow-hide",
     "core:window:allow-set-focus",
     "core:window:allow-is-visible",
+    "core:window:allow-close",
+    "core:app:allow-exit",
     "shell:allow-open",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
-    "global-shortcut:allow-is-registered"
+    "global-shortcut:allow-is-registered",
+    "core:tray:default"
   ]
 }
