@@ -28,6 +28,7 @@
 
   let lastAppliedView: ViewMode | null = null;
   let isResizing = false;
+  let wasHidden = true;
   let LogicalSize: typeof import("@tauri-apps/api/dpi").LogicalSize;
   let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
 
@@ -84,7 +85,8 @@
     });
 
     await currentWindow.onFocusChanged(({ payload: focused }) => {
-      if (focused) {
+      if (focused && wasHidden) {
+        wasHidden = false;
         currentView.set("list");
         selectedCategory.set(null);
         // Apply saved position
@@ -112,13 +114,18 @@
     await getCurrentWindow().startDragging();
   }
 
+  function hideWindow() {
+    wasHidden = true;
+    hideWindow();
+  }
+
   async function copyHistoryItem(index: number) {
     const items = $filteredHistory;
     if (index < items.length) {
       try {
         // Paste first, then hide (don't wait for hide)
         await invoke("paste_to_previous_window", { content: items[index] });
-        getCurrentWindow().hide();
+        hideWindow();
       } catch (e) {
         console.error("Failed to paste:", e);
       }
@@ -131,7 +138,7 @@
       try {
         // Paste first, then hide (don't wait for hide)
         await invoke("paste_to_previous_window", { content: item.content });
-        getCurrentWindow().hide();
+        hideWindow();
       } catch (e) {
         console.error("Failed to paste:", e);
       }
@@ -190,7 +197,7 @@
         event.preventDefault();
         break;
       case "Escape":
-        getCurrentWindow().hide();
+        hideWindow();
         event.preventDefault();
         break;
     }
@@ -271,7 +278,7 @@
     <button class="title-btn" on:mousedown|stopPropagation on:click={openSettings}>
       <Settings size={14} strokeWidth={1.5} />
     </button>
-    <button class="title-btn close" on:mousedown|stopPropagation on:click={() => getCurrentWindow().hide()}>
+    <button class="title-btn close" on:mousedown|stopPropagation on:click={() => hideWindow()}>
       <X size={14} strokeWidth={2} />
     </button>
   </div>
@@ -346,7 +353,7 @@
       <Whiteboard />
       <button
         class="nav-btn nav-bottom-single"
-        on:click={() => getCurrentWindow().hide()}
+        on:click={() => hideWindow()}
       >
         <X size={16} strokeWidth={1.5} />
         <span>Close</span>

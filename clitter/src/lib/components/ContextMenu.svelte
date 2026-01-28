@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { FolderPlus, Keyboard, Trash2, ClipboardPaste, Palette, Plus, Upload } from "lucide-svelte";
+  import { FolderPlus, Keyboard, Trash2, ClipboardPaste, Palette, Plus, Upload, Download } from "lucide-svelte";
   import { contextMenu, hideContextMenu, openShortcutEdit } from "$lib/stores/ui";
   import { whiteboardState, focusedGroupId } from "$lib/stores/whiteboard";
   import { clipboardHistory } from "$lib/stores/clipboard";
@@ -149,7 +149,10 @@
   async function handleSetValue() {
     if ($contextMenu.target?.type !== "whiteboard") return;
 
-    const value = prompt("Enter value");
+    const label = prompt("Key (label)");
+    if (label === null) return;
+
+    const value = prompt("Value");
     if (value === null || value === "") return;
 
     const position = $contextMenu.target.position;
@@ -159,7 +162,8 @@
       const item = await invoke("add_text_to_whiteboard", {
         text: value,
         position,
-        parentGroup
+        parentGroup,
+        label: label || null
       });
       whiteboardState.update((state) => {
         state.items[(item as any).id] = item as any;
@@ -173,6 +177,26 @@
     }
 
     hideContextMenu();
+  }
+
+  async function handleExportJson() {
+    hideContextMenu();
+
+    try {
+      const json = await invoke("export_whiteboard_json");
+
+      // Create a download link
+      const blob = new Blob([json as string], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "whiteboard-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export:", err);
+      alert("Failed to export: " + err);
+    }
   }
 
   async function handleImportJson() {
@@ -225,6 +249,10 @@
       <button class="menu-item" on:click={handleImportJson}>
         <Upload size={14} strokeWidth={1.5} />
         Import JSON
+      </button>
+      <button class="menu-item" on:click={handleExportJson}>
+        <Download size={14} strokeWidth={1.5} />
+        Export JSON
       </button>
     {:else if $contextMenu.target?.type === "group"}
       <button class="menu-item" on:click={handleSetShortcut}>

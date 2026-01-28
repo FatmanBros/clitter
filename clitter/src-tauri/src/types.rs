@@ -119,6 +119,7 @@ pub struct WhiteboardItem {
     pub size: Size,
     pub parent_group: Option<Uuid>,
     pub shortcut: Option<String>,
+    pub label: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -136,6 +137,7 @@ impl WhiteboardItem {
             },
             parent_group: None,
             shortcut: None,
+            label: None,
             created_at: now,
             updated_at: now,
         }

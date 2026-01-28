@@ -46,6 +46,7 @@ export interface WhiteboardItem {
   size: Size;
   parentGroup: string | null;
   shortcut: string | null;
+  label: string | null;
   createdAt: string;
   updatedAt: string;
 }

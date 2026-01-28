@@ -139,6 +139,11 @@ impl PersistentStorage {
             .execute(pool)
             .await;
 
+        // Add label column to whiteboard_items if not exists
+        let _ = sqlx::query("ALTER TABLE whiteboard_items ADD COLUMN label TEXT")
+            .execute(pool)
+            .await;
+
         Ok(())
     }
 
@@ -198,8 +203,8 @@ impl PersistentStorage {
         sqlx::query(
             r#"
             INSERT OR REPLACE INTO whiteboard_items
-            (id, content_id, position_x, position_y, width, height, parent_group_id, shortcut, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, content_id, position_x, position_y, width, height, parent_group_id, shortcut, label, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(item.id.to_string())
@@ -210,6 +215,7 @@ impl PersistentStorage {
         .bind(item.size.height)
         .bind(item.parent_group.map(|id| id.to_string()))
         .bind(&item.shortcut)
+        .bind(&item.label)
         .bind(item.created_at.to_rfc3339())
         .bind(item.updated_at.to_rfc3339())
         .execute(&self.pool)
@@ -286,7 +292,7 @@ impl PersistentStorage {
         let item_rows = sqlx::query(
             r#"
             SELECT
-                wi.id, wi.position_x, wi.position_y, wi.width, wi.height, wi.parent_group_id, wi.shortcut, wi.created_at, wi.updated_at,
+                wi.id, wi.position_x, wi.position_y, wi.width, wi.height, wi.parent_group_id, wi.shortcut, wi.label, wi.created_at, wi.updated_at,
                 cc.id as content_id, cc.category, cc.data_type, cc.text_content, cc.text_preview,
                 cc.image_base64, cc.image_width, cc.image_height, cc.image_format, cc.source, cc.copied_at
             FROM whiteboard_items wi
@@ -347,6 +353,7 @@ impl PersistentStorage {
                 },
                 parent_group,
                 shortcut: row.get("shortcut"),
+                label: row.get("label"),
                 created_at: chrono::DateTime::parse_from_rfc3339(row.get("created_at"))
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .unwrap_or_else(|_| chrono::Utc::now()),

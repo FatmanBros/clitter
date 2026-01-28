@@ -89,6 +89,7 @@ pub fn run() {
             commands::set_item_shortcut,
             commands::get_items_with_shortcuts,
             commands::import_whiteboard_json,
+            commands::export_whiteboard_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

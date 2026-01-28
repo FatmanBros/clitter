@@ -67,9 +67,15 @@
 
   function getPreview(): string {
     if (item.content.data.type === "text") {
-      return item.content.category === "secure"
-        ? "••••••••••••"
-        : item.content.data.preview;
+      if (item.content.category === "secure") {
+        return "••••••••••••";
+      }
+      const text = item.content.data.text;
+      // If there's a label, show truncated value (10 chars)
+      if (item.label) {
+        return text.length > 10 ? text.substring(0, 10) + "..." : text;
+      }
+      return item.content.data.preview;
     }
     return "";
   }
@@ -102,6 +108,9 @@
       <svelte:component this={IconComponent} size={12} strokeWidth={1.5} />
     </span>
     <div class="preview">
+      {#if item.label}
+        <p class="label-text">{item.label}</p>
+      {/if}
       {#if item.content.data.type === "image"}
         <img
           src="data:image/{item.content.data.format};base64,{item.content.data.base64}"
@@ -183,6 +192,13 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
+  }
+
+  .label-text {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a1a1aa;
   }
 
   .preview-text {

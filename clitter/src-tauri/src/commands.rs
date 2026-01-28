@@ -140,6 +140,7 @@ pub async fn add_text_to_whiteboard(
     text: String,
     position: Position,
     parent_group: Option<String>,
+    label: Option<String>,
 ) -> Result<WhiteboardItem, String> {
     let state = APP_STATE.get().ok_or("App state not initialized")?;
     let storage = state.persistent_storage.read().await;
@@ -151,6 +152,9 @@ pub async fn add_text_to_whiteboard(
     if let Some(pg) = parent_group {
         item.parent_group = Some(Uuid::parse_str(&pg).map_err(|e| e.to_string())?);
     }
+
+    // Set label if provided
+    item.label = label;
 
     // Auto-generate sequential shortcut
     if let Some(storage) = storage.as_ref() {
@@ -410,4 +414,85 @@ async fn import_group_recursive(
     }
 
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportedItem {
+    pub shortcut: Option<String>,
+    pub label: Option<String>,
+    pub value: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportedGroup {
+    pub name: String,
+    pub shortcut: Option<String>,
+    pub color: Option<String>,
+    pub items: Vec<ExportedItem>,
+    pub groups: Vec<ExportedGroup>,
+}
+
+#[tauri::command]
+pub async fn export_whiteboard_json() -> Result<String, String> {
+    let state = APP_STATE.get().ok_or("App state not initialized")?;
+    let storage = state.persistent_storage.read().await;
+
+    if let Some(storage) = storage.as_ref() {
+        let whiteboard = storage.load_whiteboard().await.map_err(|e| e.to_string())?;
+
+        // Build export structure from root groups
+        let mut root_groups: Vec<ExportedGroup> = Vec::new();
+
+        for group in whiteboard.groups.values() {
+            if group.parent_group.is_none() {
+                let exported = export_group_recursive(&whiteboard, group.id);
+                root_groups.push(exported);
+            }
+        }
+
+        let json = serde_json::to_string_pretty(&root_groups).map_err(|e| e.to_string())?;
+        Ok(json)
+    } else {
+        Err("Storage not available".to_string())
+    }
+}
+
+fn export_group_recursive(whiteboard: &WhiteboardState, group_id: Uuid) -> ExportedGroup {
+    let group = &whiteboard.groups[&group_id];
+
+    // Get items in this group
+    let items: Vec<ExportedItem> = whiteboard
+        .items
+        .values()
+        .filter(|item| item.parent_group == Some(group_id))
+        .map(|item| {
+            let value = match &item.content.data {
+                ClipboardData::Text { text, .. } => text.clone(),
+                ClipboardData::Image { .. } => "[image]".to_string(),
+            };
+            ExportedItem {
+                shortcut: item.shortcut.clone(),
+                label: item.label.clone(),
+                value,
+            }
+        })
+        .collect();
+
+    // Get child groups recursively
+    let child_groups: Vec<ExportedGroup> = whiteboard
+        .groups
+        .values()
+        .filter(|g| g.parent_group == Some(group_id))
+        .map(|g| export_group_recursive(whiteboard, g.id))
+        .collect();
+
+    ExportedGroup {
+        name: group.name.clone(),
+        shortcut: group.shortcut.clone(),
+        color: group.color.clone(),
+        items,
+        groups: child_groups,
+    }
 }
