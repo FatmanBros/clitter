@@ -191,6 +191,16 @@
         currentView.set("whiteboard");
         event.preventDefault();
         break;
+      case "a":
+      case "A":
+        selectedCategory.set(null);
+        event.preventDefault();
+        break;
+      case "s":
+      case "S":
+        selectedCategory.set("secure");
+        event.preventDefault();
+        break;
       case "1":
       case "2":
       case "3":

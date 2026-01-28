@@ -55,14 +55,18 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
         ClipboardData::Text { text, .. } => {
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
-        ClipboardData::Image { base64, width, height, .. } => {
+        ClipboardData::Image { base64, .. } => {
             use base64::{engine::general_purpose::STANDARD, Engine};
-            let bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+            let png_bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+
+            // Decode PNG to RGBA
+            let img = image::load_from_memory(&png_bytes).map_err(|e| e.to_string())?;
+            let rgba = img.to_rgba8();
 
             let img_data = arboard::ImageData {
-                width: *width as usize,
-                height: *height as usize,
-                bytes: bytes.into(),
+                width: rgba.width() as usize,
+                height: rgba.height() as usize,
+                bytes: rgba.into_raw().into(),
             };
             clipboard.set_image(img_data).map_err(|e| e.to_string())?;
         }
@@ -83,14 +87,18 @@ pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), S
         ClipboardData::Text { text, .. } => {
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
-        ClipboardData::Image { base64, width, height, .. } => {
+        ClipboardData::Image { base64, .. } => {
             use base64::{engine::general_purpose::STANDARD, Engine};
-            let bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+            let png_bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+
+            // Decode PNG to RGBA
+            let img = image::load_from_memory(&png_bytes).map_err(|e| e.to_string())?;
+            let rgba = img.to_rgba8();
 
             let img_data = arboard::ImageData {
-                width: *width as usize,
-                height: *height as usize,
-                bytes: bytes.into(),
+                width: rgba.width() as usize,
+                height: rgba.height() as usize,
+                bytes: rgba.into_raw().into(),
             };
             clipboard.set_image(img_data).map_err(|e| e.to_string())?;
         }
