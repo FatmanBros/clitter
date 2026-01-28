@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: clitter/package-lock.json
 
       - name: Setup Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: npm install
@@ -59,7 +59,7 @@ jobs:
           cache-dependency-path: clitter/package-lock.json
 
       - name: Setup Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: npm install
@@ -89,7 +89,7 @@ jobs:
           cache-dependency-path: clitter/package-lock.json
 
       - name: Setup Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install system dependencies
         working-directory: .
