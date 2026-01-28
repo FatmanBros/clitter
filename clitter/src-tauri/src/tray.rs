@@ -1,13 +1,16 @@
 use tauri::{
-    image::Image,
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
 
 pub fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    // Load tray icon from embedded bytes
-    let icon = Image::from_bytes(include_bytes!("../icons/32x32.png"))?;
+    // Load tray icon from PNG file
+    let icon_bytes = include_bytes!("../icons/32x32.png");
+    let img = image::load_from_memory(icon_bytes)?;
+    let rgba = img.to_rgba8();
+    let (width, height) = rgba.dimensions();
+    let icon = tauri::image::Image::new_owned(rgba.into_raw(), width, height);
 
     // Create menu items
     let show_item = MenuItem::with_id(app, "show", "表示 (Alt+V)", true, None::<&str>)?;
