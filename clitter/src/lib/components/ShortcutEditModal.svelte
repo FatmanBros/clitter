@@ -169,6 +169,8 @@
     font-size: 14px;
     outline: none;
     transition: border-color 0.15s ease;
+    user-select: text;
+    -webkit-user-select: text;
   }
 
   .input:focus {

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { FolderPlus, Keyboard, Trash2 } from "lucide-svelte";
+  import { FolderPlus, Keyboard, Trash2, ClipboardPaste } from "lucide-svelte";
   import { contextMenu, hideContextMenu, openShortcutEdit } from "$lib/stores/ui";
   import { whiteboardState } from "$lib/stores/whiteboard";
+  import { clipboardHistory } from "$lib/stores/clipboard";
+  import { get } from "svelte/store";
 
   async function handleAddGroup() {
     if ($contextMenu.target?.type !== "whiteboard") return;
@@ -19,6 +21,35 @@
       });
     } catch (e) {
       console.error("Failed to create group:", e);
+    }
+
+    hideContextMenu();
+  }
+
+  async function handlePasteItem() {
+    if ($contextMenu.target?.type !== "whiteboard") return;
+
+    const history = get(clipboardHistory);
+    if (history.length === 0) {
+      alert("No items in clipboard history");
+      hideContextMenu();
+      return;
+    }
+
+    const position = $contextMenu.target.position;
+    const content = history[0]; // Use most recent item
+
+    try {
+      const item = await invoke("add_to_whiteboard", { content, position });
+      whiteboardState.update((state) => {
+        state.items[(item as any).id] = item as any;
+        if (!(item as any).parentGroup) {
+          state.rootItems.push((item as any).id);
+        }
+        return state;
+      });
+    } catch (e) {
+      console.error("Failed to add item to whiteboard:", e);
     }
 
     hideContextMenu();
@@ -74,6 +105,10 @@
     style="left: {$contextMenu.x}px; top: {$contextMenu.y}px;"
   >
     {#if $contextMenu.target?.type === "whiteboard"}
+      <button class="menu-item" on:click={handlePasteItem}>
+        <ClipboardPaste size={14} strokeWidth={1.5} />
+        Paste Item
+      </button>
       <button class="menu-item" on:click={handleAddGroup}>
         <FolderPlus size={14} strokeWidth={1.5} />
         Add Group
