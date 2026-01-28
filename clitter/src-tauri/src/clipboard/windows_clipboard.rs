@@ -63,8 +63,6 @@ pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Res
 #[cfg(target_os = "windows")]
 fn save_to_temp_png(rgba_bytes: &[u8], width: u32, height: u32) -> Result<String, String> {
     use image::{ImageBuffer, Rgba};
-    use std::io::Write;
-
     // Create image from RGBA bytes
     let img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(width, height, rgba_bytes.to_vec())
         .ok_or("Failed to create image buffer")?;
