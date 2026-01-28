@@ -12,7 +12,7 @@
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPosition, updateWindowPosition } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
@@ -28,12 +28,14 @@
 
   let lastAppliedView: ViewMode | null = null;
   let isResizing = false;
+  let LogicalSize: typeof import("@tauri-apps/api/dpi").LogicalSize;
+  let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
 
   async function applyWindowSize(mode: "list" | "whiteboard") {
-    if (isResizing) return;
+    if (isResizing || !LogicalSize) return;
     const sizes = $windowSizes[mode];
     const window = getCurrentWindow();
-    await window.setSize(new (await import("@tauri-apps/api/dpi")).LogicalSize(sizes.width, sizes.height));
+    await window.setSize(new LogicalSize(sizes.width, sizes.height));
   }
 
   // Watch for view changes and apply window size
@@ -43,6 +45,10 @@
   }
 
   onMount(async () => {
+    const dpi = await import("@tauri-apps/api/dpi");
+    LogicalSize = dpi.LogicalSize;
+    LogicalPosition = dpi.LogicalPosition;
+
     await listen<ClipboardContent>("clipboard-changed", (event) => {
       clipboardHistory.update((history) => [event.payload, ...history].slice(0, 100));
     });
@@ -65,12 +71,31 @@
       }, 200);
     });
 
+    // Save window position when moved
+    let moveTimeout: ReturnType<typeof setTimeout>;
+    await currentWindow.onMoved(async ({ payload: physicalPosition }) => {
+      clearTimeout(moveTimeout);
+      moveTimeout = setTimeout(async () => {
+        const scaleFactor = await currentWindow.scaleFactor();
+        const logicalX = Math.round(physicalPosition.x / scaleFactor);
+        const logicalY = Math.round(physicalPosition.y / scaleFactor);
+        updateWindowPosition(logicalX, logicalY);
+      }, 200);
+    });
+
     await currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused) {
         currentView.set("list");
         selectedCategory.set(null);
+        // Apply saved position
+        const pos = $windowPosition;
+        currentWindow.setPosition(new LogicalPosition(pos.x, pos.y));
       }
     });
+
+    // Apply initial position
+    const initialPos = $windowPosition;
+    await currentWindow.setPosition(new LogicalPosition(initialPos.x, initialPos.y));
 
     try {
       const history = await invoke<ClipboardContent[]>("get_recent_items", { count: 100 });

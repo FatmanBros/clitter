@@ -65,6 +65,44 @@ windowSizes.subscribe((sizes) => {
   saveSizes(sizes);
 });
 
+// Window position (global for all modes)
+export interface WindowPosition {
+  x: number;
+  y: number;
+}
+
+const DEFAULT_POSITION: WindowPosition = { x: 100, y: 100 };
+
+function loadPosition(): WindowPosition {
+  try {
+    const saved = localStorage.getItem("clitter-window-position");
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Failed to load window position:", e);
+  }
+  return DEFAULT_POSITION;
+}
+
+function savePosition(position: WindowPosition) {
+  try {
+    localStorage.setItem("clitter-window-position", JSON.stringify(position));
+  } catch (e) {
+    console.error("Failed to save window position:", e);
+  }
+}
+
+export const windowPosition = writable<WindowPosition>(loadPosition());
+
+windowPosition.subscribe((position) => {
+  savePosition(position);
+});
+
+export function updateWindowPosition(x: number, y: number) {
+  windowPosition.set({ x, y });
+}
+
 // Actions
 export function showContextMenu(
   x: number,
