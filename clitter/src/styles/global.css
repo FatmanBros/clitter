@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #213547;
+  background-color: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Sticky note styles */
+.sticky-note {
+  @apply rounded-lg shadow-md p-3 cursor-move select-none;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.sticky-note:hover {
+  @apply shadow-lg;
+}
+
+.sticky-note.dragging {
+  @apply shadow-xl;
+  transform: scale(1.02);
+}
+
+/* Category colors */
+.category-text {
+  @apply bg-yellow-100 border-yellow-300;
+}
+
+.category-image {
+  @apply bg-blue-100 border-blue-300;
+}
+
+.category-numeric {
+  @apply bg-green-100 border-green-300;
+}
+
+.category-secure {
+  @apply bg-red-100 border-red-300;
+}
+
+/* Accordion animation */
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.accordion-content.collapsed {
+  max-height: 0;
+}
