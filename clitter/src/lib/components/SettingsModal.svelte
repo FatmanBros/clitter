@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { X } from "lucide-svelte";
+  import { X, Maximize2, Layout } from "lucide-svelte";
   import { settingsModal, closeSettings, windowSizes, updateWindowSize } from "$lib/stores/ui";
 
+  let activeTab: "list" | "whiteboard" = "list";
   let listWidth = $windowSizes.list.width;
   let listHeight = $windowSizes.list.height;
   let whiteboardWidth = $windowSizes.whiteboard.width;
@@ -41,33 +42,70 @@
         </button>
       </div>
 
-      <div class="modal-body">
-        <div class="section">
-          <h4>List Mode Size</h4>
-          <div class="size-inputs">
-            <label>
-              <span>Width</span>
-              <input type="number" bind:value={listWidth} min="200" max="1200" />
-            </label>
-            <label>
-              <span>Height</span>
-              <input type="number" bind:value={listHeight} min="200" max="1200" />
-            </label>
-          </div>
-        </div>
+      <div class="modal-content">
+        <nav class="sidebar">
+          <button
+            class="nav-item"
+            class:active={activeTab === "list"}
+            on:click={() => (activeTab = "list")}
+          >
+            <Layout size={16} strokeWidth={1.5} />
+            <span>List Mode</span>
+          </button>
+          <button
+            class="nav-item"
+            class:active={activeTab === "whiteboard"}
+            on:click={() => (activeTab = "whiteboard")}
+          >
+            <Maximize2 size={16} strokeWidth={1.5} />
+            <span>Whiteboard</span>
+          </button>
+        </nav>
 
-        <div class="section">
-          <h4>Whiteboard Mode Size</h4>
-          <div class="size-inputs">
-            <label>
-              <span>Width</span>
-              <input type="number" bind:value={whiteboardWidth} min="200" max="1600" />
-            </label>
-            <label>
-              <span>Height</span>
-              <input type="number" bind:value={whiteboardHeight} min="200" max="1200" />
-            </label>
-          </div>
+        <div class="settings-panel">
+          {#if activeTab === "list"}
+            <div class="panel-header">
+              <h4>List Mode Size</h4>
+              <p class="hint">Window size for clipboard list view</p>
+            </div>
+            <div class="form-group">
+              <label>
+                <span class="label-text">Width</span>
+                <div class="input-wrapper">
+                  <input type="number" bind:value={listWidth} min="200" max="1200" />
+                  <span class="unit">px</span>
+                </div>
+              </label>
+              <label>
+                <span class="label-text">Height</span>
+                <div class="input-wrapper">
+                  <input type="number" bind:value={listHeight} min="200" max="1200" />
+                  <span class="unit">px</span>
+                </div>
+              </label>
+            </div>
+          {:else}
+            <div class="panel-header">
+              <h4>Whiteboard Size</h4>
+              <p class="hint">Window size for whiteboard view</p>
+            </div>
+            <div class="form-group">
+              <label>
+                <span class="label-text">Width</span>
+                <div class="input-wrapper">
+                  <input type="number" bind:value={whiteboardWidth} min="200" max="1600" />
+                  <span class="unit">px</span>
+                </div>
+              </label>
+              <label>
+                <span class="label-text">Height</span>
+                <div class="input-wrapper">
+                  <input type="number" bind:value={whiteboardHeight} min="200" max="1200" />
+                  <span class="unit">px</span>
+                </div>
+              </label>
+            </div>
+          {/if}
         </div>
       </div>
 
@@ -99,8 +137,11 @@
     background: rgba(39, 39, 42, 0.98);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    width: 360px;
+    width: 480px;
+    max-height: 80vh;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
   }
 
   .modal-header {
@@ -137,58 +178,115 @@
     color: #a1a1aa;
   }
 
-  .modal-body {
-    padding: 16px;
+  .modal-content {
+    display: flex;
+    flex: 1;
+    min-height: 200px;
   }
 
-  .section {
+  .sidebar {
+    width: 140px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #a1a1aa;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+  }
+
+  .nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #d4d4d8;
+  }
+
+  .nav-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+
+  .settings-panel {
+    flex: 1;
+    padding: 20px;
+  }
+
+  .panel-header {
     margin-bottom: 20px;
   }
 
-  .section:last-child {
-    margin-bottom: 0;
+  .panel-header h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e4e4e7;
   }
 
-  .section h4 {
-    margin: 0 0 12px 0;
-    font-size: 13px;
+  .panel-header .hint {
+    margin: 0;
+    font-size: 12px;
+    color: #71717a;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .label-text {
+    font-size: 12px;
     font-weight: 500;
     color: #a1a1aa;
   }
 
-  .size-inputs {
+  .input-wrapper {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
   }
 
-  .size-inputs label {
+  .input-wrapper input {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .size-inputs span {
-    font-size: 11px;
-    color: #71717a;
-  }
-
-  .size-inputs input {
-    width: 100%;
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     color: #e4e4e7;
-    font-size: 13px;
+    font-size: 14px;
     outline: none;
     transition: border-color 0.15s ease;
     user-select: text;
     -webkit-user-select: text;
   }
 
-  .size-inputs input:focus {
+  .input-wrapper input:focus {
     border-color: #3b82f6;
+  }
+
+  .unit {
+    font-size: 12px;
+    color: #71717a;
+    min-width: 20px;
   }
 
   .modal-footer {

@@ -12,7 +12,7 @@
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
@@ -24,16 +24,21 @@
     exitGroup,
     focusedGroupId,
   } from "$lib/stores/whiteboard";
-  import type { ClipboardContent } from "$lib/types";
+  import type { ClipboardContent, ViewMode } from "$lib/types";
+
+  let lastAppliedView: ViewMode | null = null;
+  let isResizing = false;
 
   async function applyWindowSize(mode: "list" | "whiteboard") {
+    if (isResizing) return;
     const sizes = $windowSizes[mode];
     const window = getCurrentWindow();
     await window.setSize(new (await import("@tauri-apps/api/dpi")).LogicalSize(sizes.width, sizes.height));
   }
 
   // Watch for view changes and apply window size
-  $: if ($currentView) {
+  $: if ($currentView && $currentView !== lastAppliedView) {
+    lastAppliedView = $currentView;
     applyWindowSize($currentView);
   }
 
@@ -43,6 +48,23 @@
     });
 
     const currentWindow = getCurrentWindow();
+
+    // Save window size when user resizes by dragging
+    let resizeTimeout: ReturnType<typeof setTimeout>;
+    await currentWindow.onResized(async ({ payload: physicalSize }) => {
+      isResizing = true;
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(async () => {
+        // Convert physical pixels to logical pixels
+        const scaleFactor = await currentWindow.scaleFactor();
+        const logicalWidth = Math.round(physicalSize.width / scaleFactor);
+        const logicalHeight = Math.round(physicalSize.height / scaleFactor);
+        const mode = $currentView;
+        updateWindowSize(mode, logicalWidth, logicalHeight);
+        isResizing = false;
+      }, 200);
+    });
+
     await currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused) {
         currentView.set("list");
@@ -138,10 +160,11 @@
   function handleWhiteboardKeydown(event: KeyboardEvent) {
     switch (event.key) {
       case "ArrowDown":
-        if (!$shortcutInput && !$focusedGroupId) {
-          currentView.set("list");
-          event.preventDefault();
-        }
+        // Always go back to list view
+        clearShortcutInput();
+        focusedGroupId.set(null);
+        currentView.set("list");
+        event.preventDefault();
         break;
       case "Escape":
         if ($shortcutInput) {

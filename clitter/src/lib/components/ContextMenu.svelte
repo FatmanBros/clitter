@@ -73,21 +73,23 @@
     if (!$contextMenu.target) return;
 
     if ($contextMenu.target.type === "item") {
+      const targetId = $contextMenu.target.id;
       try {
-        await invoke("remove_from_whiteboard", { id: $contextMenu.target.id });
+        await invoke("remove_from_whiteboard", { id: targetId });
         whiteboardState.update((state) => {
-          delete state.items[$contextMenu.target!.id];
-          state.rootItems = state.rootItems.filter((id) => id !== $contextMenu.target!.id);
+          delete state.items[targetId];
+          state.rootItems = state.rootItems.filter((id) => id !== targetId);
           return state;
         });
       } catch (e) {
         console.error("Failed to delete item:", e);
       }
     } else if ($contextMenu.target.type === "group") {
+      const targetId = $contextMenu.target.id;
       try {
-        await invoke("delete_group", { id: $contextMenu.target.id });
+        await invoke("delete_group", { id: targetId });
         whiteboardState.update((state) => {
-          delete state.groups[$contextMenu.target!.id];
+          delete state.groups[targetId];
           return state;
         });
       } catch (e) {
