@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { Folder, ChevronRight, ChevronDown } from "lucide-svelte";
   import { whiteboardState, enterGroup } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
   import type { Group } from "$lib/types";
@@ -80,7 +81,6 @@
     enterGroup(group.id);
   }
 
-  // Count children
   $: childCount = Object.values($whiteboardState.items).filter(
     (item) => item.parentGroup === group.id
   ).length + Object.values($whiteboardState.groups).filter(
@@ -89,54 +89,122 @@
 </script>
 
 <div
-  class="group-container absolute rounded-lg shadow-md border-2 border-blue-300 bg-blue-50
-    cursor-move select-none
-    {isDragging ? 'shadow-xl z-50' : ''}"
-  style="left: {group.position.x}px; top: {group.position.y}px; min-width: 200px;"
+  class="group-container"
+  class:dragging={isDragging}
+  style="left: {group.position.x}px; top: {group.position.y}px;"
   role="button"
   tabindex="0"
   on:mousedown={handleMouseDown}
   on:contextmenu={handleContextMenu}
   on:dblclick={handleDoubleClick}
 >
-  <!-- Shortcut badge -->
   {#if group.shortcut}
-    <div class="absolute -top-2 -right-2 px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full font-bold">
-      {group.shortcut}
-    </div>
+    <div class="shortcut-badge">{group.shortcut}</div>
   {/if}
 
-  <!-- Header -->
-  <div class="flex items-center gap-2 px-3 py-2 bg-blue-100 rounded-t-lg border-b border-blue-200">
-    <button
-      class="text-blue-600 hover:text-blue-800"
-      on:click|stopPropagation={toggleCollapse}
-    >
-      {group.collapsed ? "▶" : "▼"}
+  <div class="group-header">
+    <button class="collapse-btn" on:click|stopPropagation={toggleCollapse}>
+      {#if group.collapsed}
+        <ChevronRight size={14} strokeWidth={1.5} />
+      {:else}
+        <ChevronDown size={14} strokeWidth={1.5} />
+      {/if}
     </button>
-    <span class="text-lg">📁</span>
-    <span class="font-medium text-gray-800 flex-1">{group.name}</span>
-    <span class="text-xs text-gray-500">({childCount})</span>
+    <Folder size={14} strokeWidth={1.5} />
+    <span class="group-name">{group.name}</span>
+    <span class="child-count">{childCount}</span>
   </div>
 
-  <!-- Content (collapsed indicator) -->
-  {#if group.collapsed}
-    <div class="px-3 py-2 text-sm text-gray-500 text-center">
-      ダブルクリックで展開
-    </div>
-  {:else}
-    <div class="px-3 py-2 text-sm text-gray-500 text-center min-h-[60px]">
-      ダブルクリックで中に入る
-    </div>
-  {/if}
+  <div class="group-body">
+    {#if group.collapsed}
+      <p>Double-click to expand</p>
+    {:else}
+      <p>Double-click to enter</p>
+    {/if}
+  </div>
 </div>
 
 <style>
   .group-container {
-    transition: box-shadow 0.2s ease, transform 0.1s ease;
+    position: absolute;
+    min-width: 180px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    cursor: move;
+    user-select: none;
+    transition: box-shadow 0.15s ease;
   }
 
   .group-container:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .group-container.dragging {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+  }
+
+  .shortcut-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 2px 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(59, 130, 246, 0.15);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px 8px 0 0;
+    color: #60a5fa;
+  }
+
+  .collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #60a5fa;
+    cursor: pointer;
+  }
+
+  .collapse-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  .group-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: #d4d4d8;
+  }
+
+  .child-count {
+    font-size: 11px;
+    color: #71717a;
+  }
+
+  .group-body {
+    padding: 12px;
+    text-align: center;
+  }
+
+  .group-body p {
+    margin: 0;
+    font-size: 11px;
+    color: #52525b;
   }
 </style>

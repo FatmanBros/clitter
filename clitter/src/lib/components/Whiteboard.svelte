@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { FolderOpen } from "lucide-svelte";
   import {
     whiteboardState,
     shortcutInput,
@@ -54,7 +55,6 @@
     event.dataTransfer!.dropEffect = "copy";
   }
 
-  // Get visible items/groups based on focus
   $: visibleItems = Object.values($whiteboardState.items).filter(
     (item) => item.parentGroup === $focusedGroupId
   );
@@ -68,29 +68,26 @@
     : null;
 </script>
 
-<div class="flex-1 flex flex-col overflow-hidden">
+<div class="whiteboard-wrapper">
   <!-- Shortcut input display -->
-  <div class="px-4 py-2 bg-gray-100 border-b border-gray-200">
-    <div class="flex items-center gap-2">
+  <div class="shortcut-bar">
+    <div class="shortcut-input">
       {#if currentGroupName}
-        <span class="text-sm text-gray-500">📁 {currentGroupName} /</span>
-      {/if}
-      <span class="font-mono text-lg">
-        {$shortcutInput || "_"}
-      </span>
-      {#if $matchedShortcuts.length > 0 && $shortcutInput}
-        <span class="text-sm text-gray-400">
-          ({$matchedShortcuts.length}件マッチ)
+        <span class="group-path">
+          <FolderOpen size={12} strokeWidth={1.5} />
+          {currentGroupName}
         </span>
+        <span class="separator">/</span>
+      {/if}
+      <span class="input-text">{$shortcutInput || "_"}</span>
+      {#if $matchedShortcuts.length > 0 && $shortcutInput}
+        <span class="match-count">({$matchedShortcuts.length})</span>
       {/if}
     </div>
     {#if $matchedShortcuts.length > 0 && $shortcutInput}
-      <div class="flex gap-2 mt-1 flex-wrap">
+      <div class="match-list">
         {#each $matchedShortcuts.slice(0, 5) as match}
-          <span
-            class="text-xs px-2 py-0.5 rounded
-              {match.type === 'group' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'}"
-          >
+          <span class="match-item" class:is-group={match.type === "group"}>
             [{match.shortcut}] {match.name}
           </span>
         {/each}
@@ -102,19 +99,17 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     bind:this={whiteboardEl}
-    class="flex-1 relative overflow-auto bg-gray-50"
+    class="whiteboard-canvas"
     role="application"
     on:contextmenu={handleContextMenu}
     on:drop={handleDrop}
     on:dragover={handleDragOver}
   >
     {#if visibleItems.length === 0 && visibleGroups.length === 0}
-      <div class="absolute inset-0 flex items-center justify-center text-gray-400">
-        <div class="text-center">
-          <p class="text-lg mb-2">ホワイトボード</p>
-          <p class="text-sm">履歴からアイテムをドラッグ&ドロップ</p>
-          <p class="text-sm">右クリックでグループ追加</p>
-        </div>
+      <div class="empty-state">
+        <p class="title">Whiteboard</p>
+        <p class="hint">Drag items from history</p>
+        <p class="hint">Right-click to add group</p>
       </div>
     {/if}
 
@@ -127,3 +122,95 @@
     {/each}
   </div>
 </div>
+
+<style>
+  .whiteboard-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .shortcut-bar {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .shortcut-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .group-path {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #71717a;
+    font-size: 12px;
+  }
+
+  .separator {
+    color: #52525b;
+  }
+
+  .input-text {
+    font-family: monospace;
+    color: #e4e4e7;
+  }
+
+  .match-count {
+    color: #52525b;
+    font-size: 11px;
+  }
+
+  .match-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .match-item {
+    padding: 2px 8px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    color: #a1a1aa;
+  }
+
+  .match-item.is-group {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+  }
+
+  .whiteboard-canvas {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #52525b;
+  }
+
+  .empty-state .title {
+    font-size: 16px;
+    margin: 0 0 8px 0;
+    color: #71717a;
+  }
+
+  .empty-state .hint {
+    font-size: 12px;
+    margin: 2px 0;
+  }
+</style>

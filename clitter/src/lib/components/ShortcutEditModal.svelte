@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { X } from "lucide-svelte";
   import { shortcutEditModal, closeShortcutEdit } from "$lib/stores/ui";
   import { whiteboardState } from "$lib/stores/whiteboard";
 
@@ -33,8 +34,6 @@
           collapsed: undefined,
           position: undefined,
         });
-        // Note: Group shortcut update would need a separate command
-        // For now, we update locally
         whiteboardState.update((state) => {
           if (state.groups[$shortcutEditModal.targetId!]) {
             state.groups[$shortcutEditModal.targetId!].shortcut = shortcut;
@@ -59,43 +58,168 @@
 </script>
 
 {#if $shortcutEditModal.show}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-80">
-      <h3 class="text-lg font-semibold mb-4">ショートカット設定</h3>
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Set Shortcut</h3>
+        <button class="close-btn" on:click={closeShortcutEdit}>
+          <X size={16} strokeWidth={1.5} />
+        </button>
+      </div>
 
-      <div class="mb-4">
-        <label class="block text-sm text-gray-600 mb-1" for="shortcut-input">
-          ショートカット文字列
-        </label>
+      <div class="modal-body">
+        <label class="label" for="shortcut-input">Shortcut key</label>
         <!-- svelte-ignore a11y_autofocus -->
         <input
           id="shortcut-input"
           type="text"
           bind:value={inputValue}
           on:keydown={handleKeydown}
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          placeholder="例: da, dev, api"
+          class="input"
+          placeholder="e.g. da, dev, api"
           autofocus
         />
-        <p class="text-xs text-gray-500 mt-1">
-          英数字のみ。空欄でショートカット解除。
-        </p>
+        <p class="hint">Alphanumeric only. Leave empty to remove.</p>
       </div>
 
-      <div class="flex gap-2 justify-end">
-        <button
-          class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          on:click={closeShortcutEdit}
-        >
-          キャンセル
+      <div class="modal-footer">
+        <button class="btn btn-secondary" on:click={closeShortcutEdit}>
+          Cancel
         </button>
-        <button
-          class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-          on:click={handleSave}
-        >
-          保存
+        <button class="btn btn-primary" on:click={handleSave}>
+          Save
         </button>
       </div>
     </div>
   </div>
 {/if}
+
+<style>
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal {
+    background: rgba(39, 39, 42, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e4e4e7;
+  }
+
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #71717a;
+    cursor: pointer;
+    transition: all 0.1s ease;
+  }
+
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a1a1aa;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .label {
+    display: block;
+    font-size: 12px;
+    color: #a1a1aa;
+    margin-bottom: 6px;
+  }
+
+  .input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #e4e4e7;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .input:focus {
+    border-color: #3b82f6;
+  }
+
+  .input::placeholder {
+    color: #52525b;
+  }
+
+  .hint {
+    margin: 8px 0 0 0;
+    font-size: 11px;
+    color: #52525b;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    border: none;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+  }
+</style>

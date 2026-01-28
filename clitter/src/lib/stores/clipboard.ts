@@ -18,21 +18,10 @@ export const filteredHistory = derived(
   }
 );
 
-// Number badges for quick access
-export const numberBadges = ["①", "②", "③", "④", "⑤"];
-
-// Category icons
-export const categoryIcons: Record<Category, string> = {
-  text: "📋",
-  image: "🖼️",
-  numeric: "🔢",
-  secure: "🔒",
-};
-
 // Category labels
 export const categoryLabels: Record<Category, string> = {
-  text: "文字",
-  image: "画像",
-  numeric: "数字",
-  secure: "セキュア",
+  text: "Text",
+  image: "Image",
+  numeric: "Numeric",
+  secure: "Secure",
 };

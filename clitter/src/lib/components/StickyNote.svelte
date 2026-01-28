@@ -1,9 +1,9 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { Image, Type, Hash, Lock } from "lucide-svelte";
   import { whiteboardState } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
-  import { categoryIcons } from "$lib/stores/clipboard";
-  import type { WhiteboardItem, Position } from "$lib/types";
+  import type { WhiteboardItem } from "$lib/types";
 
   export let item: WhiteboardItem;
 
@@ -11,8 +11,15 @@
   let startPos = { x: 0, y: 0 };
   let startItemPos = { x: 0, y: 0 };
 
+  const categoryIcons = {
+    text: Type,
+    image: Image,
+    numeric: Hash,
+    secure: Lock,
+  };
+
   function handleMouseDown(event: MouseEvent) {
-    if (event.button !== 0) return; // Only left click
+    if (event.button !== 0) return;
     isDragging = true;
     startPos = { x: event.clientX, y: event.clientY };
     startItemPos = { x: item.position.x, y: item.position.y };
@@ -42,7 +49,6 @@
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", handleMouseUp);
 
-    // Save position to backend
     try {
       await invoke("update_whiteboard_item", {
         id: item.id,
@@ -68,18 +74,18 @@
     return "";
   }
 
+  $: IconComponent = categoryIcons[item.content.category];
   $: categoryClass = {
-    text: "bg-yellow-100 border-yellow-300",
-    image: "bg-blue-100 border-blue-300",
-    numeric: "bg-green-100 border-green-300",
-    secure: "bg-red-100 border-red-300",
+    text: "category-text",
+    image: "category-image",
+    numeric: "category-numeric",
+    secure: "category-secure",
   }[item.content.category];
 </script>
 
 <div
-  class="sticky-note absolute rounded-lg shadow-md border-2 p-3 cursor-move select-none
-    {categoryClass}
-    {isDragging ? 'shadow-xl z-50' : ''}"
+  class="sticky-note {categoryClass}"
+  class:dragging={isDragging}
   style="left: {item.position.x}px; top: {item.position.y}px;
          width: {item.size.width}px; min-height: {item.size.height}px;"
   role="button"
@@ -87,27 +93,23 @@
   on:mousedown={handleMouseDown}
   on:contextmenu={handleContextMenu}
 >
-  <!-- Shortcut badge -->
   {#if item.shortcut}
-    <div class="absolute -top-2 -right-2 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full font-bold">
-      {item.shortcut}
-    </div>
+    <div class="shortcut-badge">{item.shortcut}</div>
   {/if}
 
-  <!-- Category icon -->
-  <div class="flex items-start gap-2">
-    <span class="text-lg">{categoryIcons[item.content.category]}</span>
-    <div class="flex-1 min-w-0 overflow-hidden">
+  <div class="note-content">
+    <span class="category-icon">
+      <svelte:component this={IconComponent} size={12} strokeWidth={1.5} />
+    </span>
+    <div class="preview">
       {#if item.content.data.type === "image"}
         <img
           src="data:image/{item.content.data.format};base64,{item.content.data.base64}"
           alt="Sticky note content"
-          class="max-w-full rounded"
+          class="preview-image"
         />
       {:else}
-        <p class="text-sm text-gray-700 break-words">
-          {getPreview()}
-        </p>
+        <p class="preview-text">{getPreview()}</p>
       {/if}
     </div>
   </div>
@@ -115,10 +117,83 @@
 
 <style>
   .sticky-note {
-    transition: box-shadow 0.2s ease, transform 0.1s ease;
+    position: absolute;
+    border-radius: 6px;
+    padding: 8px;
+    cursor: move;
+    user-select: none;
+    transition: box-shadow 0.15s ease, transform 0.1s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .sticky-note:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .sticky-note.dragging {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+  }
+
+  .category-text {
+    background: rgba(250, 204, 21, 0.15);
+    border-color: rgba(250, 204, 21, 0.3);
+  }
+
+  .category-image {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .category-numeric {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .category-secure {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .shortcut-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 2px 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+  }
+
+  .note-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .category-icon {
+    color: #71717a;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .preview {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .preview-text {
+    margin: 0;
+    font-size: 12px;
+    color: #d4d4d8;
+    word-wrap: break-word;
+  }
+
+  .preview-image {
+    max-width: 100%;
+    border-radius: 4px;
   }
 </style>

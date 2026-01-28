@@ -1,14 +1,14 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { FolderPlus, Keyboard, Trash2 } from "lucide-svelte";
   import { contextMenu, hideContextMenu, openShortcutEdit } from "$lib/stores/ui";
   import { whiteboardState } from "$lib/stores/whiteboard";
-  import type { Position } from "$lib/types";
 
   async function handleAddGroup() {
     if ($contextMenu.target?.type !== "whiteboard") return;
 
     const position = $contextMenu.target.position;
-    const name = prompt("グループ名を入力してください", "新規グループ");
+    const name = prompt("Group name", "New Group");
     if (!name) return;
 
     try {
@@ -70,30 +70,72 @@
 
 {#if $contextMenu.show}
   <div
-    class="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]"
+    class="context-menu"
     style="left: {$contextMenu.x}px; top: {$contextMenu.y}px;"
   >
     {#if $contextMenu.target?.type === "whiteboard"}
-      <button
-        class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-        on:click={handleAddGroup}
-      >
-        📁 グループを追加
+      <button class="menu-item" on:click={handleAddGroup}>
+        <FolderPlus size={14} strokeWidth={1.5} />
+        Add Group
       </button>
     {:else}
-      <button
-        class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-        on:click={handleSetShortcut}
-      >
-        ⌨️ ショートカット設定
+      <button class="menu-item" on:click={handleSetShortcut}>
+        <Keyboard size={14} strokeWidth={1.5} />
+        Set Shortcut
       </button>
-      <hr class="my-1 border-gray-200" />
-      <button
-        class="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-        on:click={handleDelete}
-      >
-        🗑️ 削除
+      <hr class="divider" />
+      <button class="menu-item danger" on:click={handleDelete}>
+        <Trash2 size={14} strokeWidth={1.5} />
+        Delete
       </button>
     {/if}
   </div>
 {/if}
+
+<style>
+  .context-menu {
+    position: fixed;
+    background: rgba(39, 39, 42, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 150px;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #d4d4d8;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s ease;
+  }
+
+  .menu-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .menu-item.danger {
+    color: #f87171;
+  }
+
+  .menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 4px 0;
+  }
+</style>

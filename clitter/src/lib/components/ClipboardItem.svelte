@@ -1,14 +1,20 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { numberBadges, categoryIcons } from "$lib/stores/clipboard";
-  import { whiteboardState } from "$lib/stores/whiteboard";
-  import type { ClipboardContent, Position } from "$lib/types";
+  import { Image, Type, Hash, Lock } from "lucide-svelte";
+  import type { ClipboardContent } from "$lib/types";
 
   export let item: ClipboardContent;
   export let index: number;
 
   let isDragging = false;
+
+  const categoryIcons = {
+    text: Type,
+    image: Image,
+    numeric: Hash,
+    secure: Lock,
+  };
 
   async function handleClick() {
     try {
@@ -37,13 +43,14 @@
     }
     return "";
   }
+
+  $: IconComponent = categoryIcons[item.category];
 </script>
 
 <div
-  class="clipboard-item flex items-start gap-3 p-3 rounded-lg border cursor-pointer
-    hover:border-primary-300 hover:bg-primary-50 transition-colors
-    {isDragging ? 'opacity-50' : ''}
-    {item.category === 'secure' ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}"
+  class="clipboard-item"
+  class:dragging={isDragging}
+  class:secure={item.category === "secure"}
   role="button"
   tabindex="0"
   draggable="true"
@@ -53,32 +60,93 @@
   on:dragend={handleDragEnd}
 >
   {#if index < 5}
-    <span class="number-badge text-primary-600 font-bold text-lg">
-      {numberBadges[index]}
-    </span>
+    <span class="index-badge">{index + 1}</span>
   {/if}
 
-  <span class="category-icon text-lg">
-    {categoryIcons[item.category]}
+  <span class="category-icon">
+    <svelte:component this={IconComponent} size={14} strokeWidth={1.5} />
   </span>
 
-  <div class="flex-1 min-w-0">
+  <div class="content">
     {#if item.data.type === "image"}
       <img
         src="data:image/{item.data.format};base64,{item.data.base64}"
         alt="Clipboard content"
-        class="max-h-16 rounded"
+        class="preview-image"
       />
     {:else}
-      <p class="text-sm text-gray-700 truncate">
-        {getPreview()}
-      </p>
+      <p class="preview-text">{getPreview()}</p>
     {/if}
   </div>
 </div>
 
 <style>
+  .clipboard-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .clipboard-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
   .clipboard-item:active {
     transform: scale(0.98);
+  }
+
+  .clipboard-item.dragging {
+    opacity: 0.5;
+  }
+
+  .clipboard-item.secure {
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .index-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .category-icon {
+    color: #71717a;
+    flex-shrink: 0;
+  }
+
+  .content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .preview-text {
+    margin: 0;
+    font-size: 13px;
+    color: #d4d4d8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .preview-image {
+    max-height: 48px;
+    border-radius: 4px;
   }
 </style>
