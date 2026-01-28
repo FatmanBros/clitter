@@ -10,17 +10,18 @@ use windows::{
 };
 
 #[cfg(target_os = "windows")]
+const CF_DIB: u32 = 8; // Standard Windows clipboard format for DIB
+
+#[cfg(target_os = "windows")]
 pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Result<(), String> {
     unsafe {
         // Open clipboard
-        if !OpenClipboard(HWND::default()).as_bool() {
-            return Err("Failed to open clipboard".to_string());
-        }
+        OpenClipboard(HWND::default()).map_err(|e| format!("Failed to open clipboard: {}", e))?;
 
         // Empty clipboard
-        if !EmptyClipboard().as_bool() {
-            CloseClipboard();
-            return Err("Failed to empty clipboard".to_string());
+        if let Err(e) = EmptyClipboard() {
+            let _ = CloseClipboard();
+            return Err(format!("Failed to empty clipboard: {}", e));
         }
 
         // Create DIB (Device Independent Bitmap)
@@ -31,17 +32,15 @@ pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Res
         let total_size = header_size + pixel_data_size as usize;
 
         // Allocate global memory
-        let hglobal = GlobalAlloc(GMEM_MOVEABLE, total_size);
-        if hglobal.is_err() {
-            CloseClipboard();
-            return Err("Failed to allocate global memory".to_string());
-        }
-        let hglobal = hglobal.unwrap();
+        let hglobal = GlobalAlloc(GMEM_MOVEABLE, total_size).map_err(|e| {
+            let _ = CloseClipboard();
+            format!("Failed to allocate global memory: {}", e)
+        })?;
 
         let ptr = GlobalLock(hglobal);
         if ptr.is_null() {
-            GlobalFree(hglobal);
-            CloseClipboard();
+            let _ = GlobalFree(hglobal);
+            let _ = CloseClipboard();
             return Err("Failed to lock global memory".to_string());
         }
 
@@ -52,7 +51,7 @@ pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Res
             biHeight: height as i32, // Positive = bottom-up DIB
             biPlanes: 1,
             biBitCount: 32,
-            biCompression: BI_RGB.0,
+            biCompression: BI_RGB.0 as u32,
             biSizeImage: pixel_data_size,
             biXPelsPerMeter: 0,
             biYPelsPerMeter: 0,
@@ -86,17 +85,17 @@ pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Res
             }
         }
 
-        GlobalUnlock(hglobal);
+        let _ = GlobalUnlock(hglobal);
 
-        // Set clipboard data
-        let result = SetClipboardData(CF_DIB.0 as u32, HANDLE(hglobal.0));
+        // Set clipboard data (CF_DIB = 8)
+        let result = SetClipboardData(CF_DIB, HANDLE(hglobal.0 as *mut std::ffi::c_void));
         if result.is_err() {
-            GlobalFree(hglobal);
-            CloseClipboard();
+            let _ = GlobalFree(hglobal);
+            let _ = CloseClipboard();
             return Err("Failed to set clipboard data".to_string());
         }
 
-        CloseClipboard();
+        let _ = CloseClipboard();
         Ok(())
     }
 }
