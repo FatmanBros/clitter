@@ -233,9 +233,13 @@ pub async fn create_group(name: String, position: Position) -> Result<Group, Str
     let state = APP_STATE.get().ok_or("App state not initialized")?;
     let storage = state.persistent_storage.read().await;
 
-    let group = Group::new(name, position);
+    let mut group = Group::new(name, position);
 
+    // Auto-generate sequential shortcut
     if let Some(storage) = storage.as_ref() {
+        let next_num = storage.get_next_group_shortcut_number().await.map_err(|e| e.to_string())?;
+        group.shortcut = Some(format!("g{}", next_num));
+
         storage.save_group(&group).await.map_err(|e| e.to_string())?;
     }
 

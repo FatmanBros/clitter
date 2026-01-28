@@ -462,4 +462,26 @@ impl PersistentStorage {
 
         Ok(max_num + 1)
     }
+
+    pub async fn get_next_group_shortcut_number(&self) -> Result<i32, StorageError> {
+        // Get all group shortcuts with "g" prefix and find the max
+        let rows = sqlx::query("SELECT shortcut FROM groups WHERE shortcut IS NOT NULL")
+            .fetch_all(&self.pool)
+            .await?;
+
+        let mut max_num = 0;
+        for row in rows {
+            let shortcut: String = row.get("shortcut");
+            // Parse shortcuts like "g1", "g2", etc.
+            if let Some(num_str) = shortcut.strip_prefix('g') {
+                if let Ok(num) = num_str.parse::<i32>() {
+                    if num > max_num {
+                        max_num = num;
+                    }
+                }
+            }
+        }
+
+        Ok(max_num + 1)
+    }
 }
