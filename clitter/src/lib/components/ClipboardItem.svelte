@@ -18,10 +18,11 @@
 
   async function handleClick() {
     try {
-      await invoke("copy_to_clipboard", { content: item });
+      // Hide window first, then paste to previous window
       await getCurrentWindow().hide();
+      await invoke("paste_to_previous_window", { content: item });
     } catch (e) {
-      console.error("Failed to copy:", e);
+      console.error("Failed to paste:", e);
     }
   }
 

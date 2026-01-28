@@ -49,17 +49,26 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    // Stop propagation to prevent App.svelte's keydown handler
+    event.stopPropagation();
     if (event.key === "Enter") {
       handleSave();
     } else if (event.key === "Escape") {
       closeShortcutEdit();
     }
   }
+
+  function handleModalKeydown(event: KeyboardEvent) {
+    // Stop all keyboard events from reaching App.svelte
+    event.stopPropagation();
+  }
 </script>
 
 {#if $shortcutEditModal.show}
-  <div class="modal-backdrop">
-    <div class="modal">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal-backdrop" on:keydown={handleModalKeydown}>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="modal" on:click|stopPropagation on:keydown|stopPropagation>
       <div class="modal-header">
         <h3>Set Shortcut</h3>
         <button class="close-btn" on:click={closeShortcutEdit}>

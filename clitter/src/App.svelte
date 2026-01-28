@@ -12,7 +12,7 @@
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPosition, updateWindowPosition } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPosition, updateWindowPosition, shortcutEditModal, settingsModal } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
@@ -139,6 +139,11 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    // Skip when modals are open
+    if ($shortcutEditModal.show || $settingsModal.show) {
+      return;
+    }
+
     // Only close context menu on Escape
     if ($contextMenu.show) {
       if (event.key === "Escape") {
@@ -343,10 +348,10 @@
       <Whiteboard />
       <button
         class="nav-btn nav-bottom-single"
-        on:click={() => currentView.set("list")}
+        on:click={() => getCurrentWindow().hide()}
       >
-        <ChevronDown size={16} strokeWidth={1.5} />
-        <span>Back to List</span>
+        <X size={16} strokeWidth={1.5} />
+        <span>Close</span>
       </button>
     </div>
   {/if}
