@@ -68,7 +68,16 @@ fn check_clipboard_change(clipboard: &mut Clipboard) -> Option<ClipboardContent>
 
     // Try to get image
     if let Ok(img) = clipboard.get_image() {
-        let base64 = STANDARD.encode(&img.bytes);
+        // Convert RGBA pixel data to PNG format
+        let png_bytes = match encode_rgba_to_png(&img.bytes, img.width as u32, img.height as u32) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                eprintln!("Failed to encode image to PNG: {}", e);
+                return None;
+            }
+        };
+
+        let base64 = STANDARD.encode(&png_bytes);
         let hash = {
             use std::collections::hash_map::DefaultHasher;
             use std::hash::{Hash, Hasher};
@@ -93,4 +102,24 @@ fn check_clipboard_change(clipboard: &mut Clipboard) -> Option<ClipboardContent>
     }
 
     None
+}
+
+fn encode_rgba_to_png(rgba_bytes: &[u8], width: u32, height: u32) -> Result<Vec<u8>, String> {
+    use image::{ImageBuffer, Rgba};
+    use std::io::Cursor;
+
+    // Create an image buffer from RGBA bytes
+    let img_buffer: ImageBuffer<Rgba<u8>, Vec<u8>> =
+        ImageBuffer::from_raw(width, height, rgba_bytes.to_vec())
+            .ok_or_else(|| "Failed to create image buffer".to_string())?;
+
+    // Encode to PNG
+    let mut png_bytes = Vec::new();
+    let mut cursor = Cursor::new(&mut png_bytes);
+
+    img_buffer
+        .write_to(&mut cursor, image::ImageFormat::Png)
+        .map_err(|e| format!("Failed to encode PNG: {}", e))?;
+
+    Ok(png_bytes)
 }

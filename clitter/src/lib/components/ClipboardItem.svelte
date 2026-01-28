@@ -146,7 +146,10 @@
   }
 
   .preview-image {
+    max-width: 100%;
     max-height: 48px;
+    object-fit: contain;
     border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
   }
 </style>
