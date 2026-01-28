@@ -94,5 +94,6 @@ export interface ShortcutMatch {
   id: string;
   shortcut: string;
   name: string;
+  label: string | null;
   parentGroup: string | null;
 }

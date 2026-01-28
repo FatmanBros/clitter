@@ -34,14 +34,15 @@ export const allShortcuts = derived(
     if ($focusedGroup) {
       const group = $state.groups[$focusedGroup];
       if (group) {
-        // Add child items
+        // Add child items (include items with shortcut OR label)
         for (const [id, item] of Object.entries($state.items)) {
-          if (item.parentGroup === $focusedGroup && item.shortcut) {
+          if (item.parentGroup === $focusedGroup && (item.shortcut || item.label)) {
             shortcuts.push({
               type: "item",
               id,
-              shortcut: item.shortcut,
+              shortcut: item.shortcut || "",
               name: getItemPreview(item),
+              label: item.label,
               parentGroup: item.parentGroup,
             });
           }
@@ -54,6 +55,7 @@ export const allShortcuts = derived(
               id,
               shortcut: g.shortcut,
               name: g.name,
+              label: null,
               parentGroup: g.parentGroup,
             });
           }
@@ -62,12 +64,13 @@ export const allShortcuts = derived(
     } else {
       // Show root level shortcuts
       for (const [id, item] of Object.entries($state.items)) {
-        if (!item.parentGroup && item.shortcut) {
+        if (!item.parentGroup && (item.shortcut || item.label)) {
           shortcuts.push({
             type: "item",
             id,
-            shortcut: item.shortcut,
+            shortcut: item.shortcut || "",
             name: getItemPreview(item),
+            label: item.label,
             parentGroup: null,
           });
         }
@@ -79,6 +82,7 @@ export const allShortcuts = derived(
             id,
             shortcut: group.shortcut,
             name: group.name,
+            label: null,
             parentGroup: null,
           });
         }
@@ -94,8 +98,11 @@ export const matchedShortcuts = derived(
   [allShortcuts, shortcutInput],
   ([$shortcuts, $input]) => {
     if (!$input) return $shortcuts;
+    const inputLower = $input.toLowerCase();
     return $shortcuts.filter((s) =>
-      s.shortcut.toLowerCase().startsWith($input.toLowerCase())
+      (s.shortcut && s.shortcut.toLowerCase().startsWith(inputLower)) ||
+      (s.type === "group" && s.name.toLowerCase().startsWith(inputLower)) ||
+      (s.type === "item" && s.label && s.label.toLowerCase().startsWith(inputLower))
     );
   }
 );
@@ -109,13 +116,20 @@ export const exactMatch = derived(
 
     // First try to match by shortcut
     let match = $shortcuts.find(
-      (s) => s.shortcut.toLowerCase() === inputLower
+      (s) => s.shortcut && s.shortcut.toLowerCase() === inputLower
     );
 
     // If no shortcut match, try to match groups by name
     if (!match) {
       match = $shortcuts.find(
         (s) => s.type === "group" && s.name.toLowerCase() === inputLower
+      );
+    }
+
+    // If no match yet, try to match items by label
+    if (!match) {
+      match = $shortcuts.find(
+        (s) => s.type === "item" && s.label && s.label.toLowerCase() === inputLower
       );
     }
 
