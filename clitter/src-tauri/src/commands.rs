@@ -55,20 +55,45 @@ pub async fn copy_to_clipboard(content: ClipboardContent) -> Result<(), String> 
         ClipboardData::Text { text, .. } => {
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
-        ClipboardData::Image { base64, .. } => {
+        ClipboardData::Image { base64, width: stored_w, height: stored_h, .. } => {
             use base64::{engine::general_purpose::STANDARD, Engine};
             let png_bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+            eprintln!("[copy_to_clipboard] PNG bytes: {}, stored size: {}x{}", png_bytes.len(), stored_w, stored_h);
 
             // Decode PNG to RGBA
-            let img = image::load_from_memory(&png_bytes).map_err(|e| e.to_string())?;
+            let img = image::load_from_memory(&png_bytes).map_err(|e| format!("Failed to decode PNG: {}", e))?;
             let rgba = img.to_rgba8();
 
+            let width = rgba.width() as usize;
+            let height = rgba.height() as usize;
+            let raw_bytes = rgba.into_raw();
+            eprintln!("[copy_to_clipboard] RGBA size: {}x{}, bytes: {}", width, height, raw_bytes.len());
+
+            // Verify buffer size matches expected RGBA size
+            let expected_size = width * height * 4;
+            if raw_bytes.len() != expected_size {
+                return Err(format!(
+                    "RGBA buffer size mismatch: expected {} ({}x{}x4), got {}",
+                    expected_size, width, height, raw_bytes.len()
+                ));
+            }
+
             let img_data = arboard::ImageData {
-                width: rgba.width() as usize,
-                height: rgba.height() as usize,
-                bytes: rgba.into_raw().into(),
+                width,
+                height,
+                bytes: raw_bytes.into(),
             };
-            clipboard.set_image(img_data).map_err(|e| e.to_string())?;
+
+            // Use catch_unwind to prevent panic from crashing the app
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                clipboard.set_image(img_data)
+            }));
+
+            match result {
+                Ok(Ok(())) => eprintln!("[copy_to_clipboard] Image set successfully"),
+                Ok(Err(e)) => return Err(format!("Failed to set clipboard image: {}", e)),
+                Err(_) => return Err("Clipboard set_image panicked - this may be a bug in arboard".to_string()),
+            }
         }
     }
 
@@ -87,20 +112,45 @@ pub async fn paste_to_previous_window(content: ClipboardContent) -> Result<(), S
         ClipboardData::Text { text, .. } => {
             clipboard.set_text(text).map_err(|e| e.to_string())?;
         }
-        ClipboardData::Image { base64, .. } => {
+        ClipboardData::Image { base64, width: stored_w, height: stored_h, .. } => {
             use base64::{engine::general_purpose::STANDARD, Engine};
             let png_bytes = STANDARD.decode(base64).map_err(|e| e.to_string())?;
+            eprintln!("[paste_to_previous_window] PNG bytes: {}, stored size: {}x{}", png_bytes.len(), stored_w, stored_h);
 
             // Decode PNG to RGBA
-            let img = image::load_from_memory(&png_bytes).map_err(|e| e.to_string())?;
+            let img = image::load_from_memory(&png_bytes).map_err(|e| format!("Failed to decode PNG: {}", e))?;
             let rgba = img.to_rgba8();
 
+            let width = rgba.width() as usize;
+            let height = rgba.height() as usize;
+            let raw_bytes = rgba.into_raw();
+            eprintln!("[paste_to_previous_window] RGBA size: {}x{}, bytes: {}", width, height, raw_bytes.len());
+
+            // Verify buffer size matches expected RGBA size
+            let expected_size = width * height * 4;
+            if raw_bytes.len() != expected_size {
+                return Err(format!(
+                    "RGBA buffer size mismatch: expected {} ({}x{}x4), got {}",
+                    expected_size, width, height, raw_bytes.len()
+                ));
+            }
+
             let img_data = arboard::ImageData {
-                width: rgba.width() as usize,
-                height: rgba.height() as usize,
-                bytes: rgba.into_raw().into(),
+                width,
+                height,
+                bytes: raw_bytes.into(),
             };
-            clipboard.set_image(img_data).map_err(|e| e.to_string())?;
+
+            // Use catch_unwind to prevent panic from crashing the app
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                clipboard.set_image(img_data)
+            }));
+
+            match result {
+                Ok(Ok(())) => eprintln!("[paste_to_previous_window] Image set successfully"),
+                Ok(Err(e)) => return Err(format!("Failed to set clipboard image: {}", e)),
+                Err(_) => return Err("Clipboard set_image panicked - this may be a bug in arboard".to_string()),
+            }
         }
     }
 
