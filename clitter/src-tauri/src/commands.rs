@@ -538,3 +538,42 @@ fn export_group_recursive(whiteboard: &WhiteboardState, group_id: Uuid) -> Expor
         groups: child_groups,
     }
 }
+
+#[tauri::command]
+pub async fn get_global_shortcut() -> Result<String, String> {
+    let state = APP_STATE.get().ok_or("App state not initialized")?;
+    let storage = state.persistent_storage.read().await;
+
+    if let Some(storage) = storage.as_ref() {
+        let shortcut = storage
+            .get_setting("global_shortcut")
+            .await
+            .map_err(|e| e.to_string())?
+            .unwrap_or_else(|| "Alt+V".to_string());
+        Ok(shortcut)
+    } else {
+        Ok("Alt+V".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn set_global_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), String> {
+    // Validate the shortcut format first
+    crate::hotkey::parse_shortcut(&shortcut)?;
+
+    // Try to change the shortcut
+    crate::hotkey::change_shortcut(&app, &shortcut)?;
+
+    // Save to storage
+    let state = APP_STATE.get().ok_or("App state not initialized")?;
+    let storage = state.persistent_storage.read().await;
+
+    if let Some(storage) = storage.as_ref() {
+        storage
+            .set_setting("global_shortcut", &shortcut)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}

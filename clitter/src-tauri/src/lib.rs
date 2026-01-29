@@ -53,6 +53,7 @@ pub fn run() {
 
             // Initialize persistent storage in background
             let app_handle = app.handle().clone();
+            let app_handle_for_clipboard = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 match PersistentStorage::new().await {
                     Ok(storage) => {
@@ -60,6 +61,8 @@ pub fn run() {
                             let mut ps = state.persistent_storage.write().await;
                             *ps = Some(storage);
                         }
+                        // Load saved shortcut after storage is ready
+                        hotkey::load_saved_shortcut(&app_handle).await;
                     }
                     Err(e) => {
                         eprintln!("Failed to initialize persistent storage: {}", e);
@@ -68,7 +71,7 @@ pub fn run() {
             });
 
             // Start clipboard monitoring
-            clipboard::monitor::start_monitoring(app_handle);
+            clipboard::monitor::start_monitoring(app_handle_for_clipboard);
 
             Ok(())
         })
@@ -90,6 +93,8 @@ pub fn run() {
             commands::get_items_with_shortcuts,
             commands::import_whiteboard_json,
             commands::export_whiteboard_json,
+            commands::get_global_shortcut,
+            commands::set_global_shortcut,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

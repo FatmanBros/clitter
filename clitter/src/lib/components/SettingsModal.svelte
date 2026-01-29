@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { X, Maximize2, Layout, Sun, Moon, Monitor } from "lucide-svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import { onMount } from "svelte";
+  import { X, Maximize2, Layout, Sun, Moon, Monitor, Keyboard } from "lucide-svelte";
   import { settingsModal, closeSettings, windowSizes, updateWindowSize, themeMode, setTheme, type ThemeMode } from "$lib/stores/ui";
 
   let activeTab: "general" | "list" | "whiteboard" = "general";
@@ -9,15 +11,39 @@
   let whiteboardHeight = $windowSizes.whiteboard.height;
   let selectedTheme: ThemeMode = $themeMode;
 
+  let globalShortcut = "Alt+V";
+  let shortcutError = "";
+  let isCapturing = false;
+  let shortcutInput: HTMLInputElement;
+
+  async function loadShortcut() {
+    try {
+      globalShortcut = await invoke<string>("get_global_shortcut");
+    } catch (e) {
+      console.error("Failed to load shortcut:", e);
+    }
+  }
+
   $: if ($settingsModal.show) {
     listWidth = $windowSizes.list.width;
     listHeight = $windowSizes.list.height;
     whiteboardWidth = $windowSizes.whiteboard.width;
     whiteboardHeight = $windowSizes.whiteboard.height;
     selectedTheme = $themeMode;
+    shortcutError = "";
+    loadShortcut();
   }
 
-  function handleSave() {
+  async function handleSave() {
+    // Try to set the shortcut first
+    try {
+      await invoke("set_global_shortcut", { shortcut: globalShortcut });
+      shortcutError = "";
+    } catch (e) {
+      shortcutError = String(e);
+      return; // Don't close if shortcut failed
+    }
+
     updateWindowSize("list", listWidth, listHeight);
     updateWindowSize("whiteboard", whiteboardWidth, whiteboardHeight);
     setTheme(selectedTheme);
@@ -25,9 +51,53 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && !isCapturing) {
       closeSettings();
     }
+  }
+
+  function startCapture() {
+    isCapturing = true;
+    shortcutError = "";
+  }
+
+  function handleShortcutKeydown(event: KeyboardEvent) {
+    if (!isCapturing) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Ignore modifier-only presses
+    if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) {
+      return;
+    }
+
+    // Build shortcut string
+    const parts: string[] = [];
+    if (event.ctrlKey) parts.push("Ctrl");
+    if (event.altKey) parts.push("Alt");
+    if (event.shiftKey) parts.push("Shift");
+    if (event.metaKey) parts.push("Win");
+
+    // Get key name
+    let key = event.key.toUpperCase();
+    if (key === " ") key = "Space";
+    if (key.length === 1) key = key.toUpperCase();
+
+    parts.push(key);
+
+    if (parts.length < 2) {
+      shortcutError = "修飾キー (Alt, Ctrl, Shift) が必要です";
+      return;
+    }
+
+    globalShortcut = parts.join("+");
+    isCapturing = false;
+    shortcutError = "";
+  }
+
+  function handleShortcutBlur() {
+    isCapturing = false;
   }
 </script>
 
@@ -76,6 +146,28 @@
         <div class="settings-panel">
           {#if activeTab === "general"}
             <div class="panel-header">
+              <h4>Global Shortcut</h4>
+              <p class="hint">Shortcut to show/hide Clitter</p>
+            </div>
+            <div class="shortcut-setting">
+              <div class="shortcut-display" class:capturing={isCapturing}>
+                <Keyboard size={16} strokeWidth={1.5} />
+                <input
+                  bind:this={shortcutInput}
+                  type="text"
+                  value={isCapturing ? "Press keys..." : globalShortcut}
+                  readonly
+                  on:focus={startCapture}
+                  on:blur={handleShortcutBlur}
+                  on:keydown={handleShortcutKeydown}
+                />
+              </div>
+              {#if shortcutError}
+                <p class="error-text">{shortcutError}</p>
+              {/if}
+            </div>
+
+            <div class="panel-header" style="margin-top: 24px;">
               <h4>Theme</h4>
               <p class="hint">Choose your preferred color scheme</p>
             </div>
@@ -404,5 +496,51 @@
   .theme-btn span {
     font-size: 12px;
     font-weight: 500;
+  }
+
+  .shortcut-setting {
+    margin-bottom: 8px;
+  }
+
+  .shortcut-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+  }
+
+  .shortcut-display:hover {
+    border-color: var(--border-hover);
+  }
+
+  .shortcut-display.capturing {
+    border-color: var(--accent);
+    background: var(--bg-active);
+  }
+
+  .shortcut-display input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .shortcut-display.capturing input {
+    color: var(--accent);
+  }
+
+  .error-text {
+    margin: 8px 0 0 0;
+    font-size: 12px;
+    color: #ef4444;
   }
 </style>
