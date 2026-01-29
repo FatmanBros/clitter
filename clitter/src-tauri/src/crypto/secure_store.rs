@@ -41,7 +41,7 @@ impl SecureStore {
 
     pub fn generate_salt() -> [u8; SALT_LEN] {
         let mut salt = [0u8; SALT_LEN];
-        rand::thread_rng().fill_bytes(&mut salt);
+        rand::rng().fill_bytes(&mut salt);
         salt
     }
 
@@ -50,7 +50,7 @@ impl SecureStore {
             Aes256Gcm::new_from_slice(&self.key).map_err(|_| CryptoError::EncryptionFailed)?;
 
         let mut nonce_bytes = [0u8; NONCE_LEN];
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        rand::rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let ciphertext = cipher

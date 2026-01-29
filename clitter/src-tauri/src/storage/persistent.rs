@@ -134,6 +134,12 @@ impl PersistentStorage {
             .execute(pool)
             .await?;
 
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_clipboard_contents_copied_at ON clipboard_contents(copied_at)",
+        )
+        .execute(pool)
+        .await?;
+
         // Add color column to groups if not exists
         let _ = sqlx::query("ALTER TABLE groups ADD COLUMN color TEXT")
             .execute(pool)
@@ -527,5 +533,28 @@ impl PersistentStorage {
             .execute(&self.pool)
             .await?;
         Ok(())
+    }
+
+    /// Clean up old clipboard entries that are not referenced by whiteboard items.
+    /// Keeps entries from the last `days` days.
+    pub async fn cleanup_old_entries(&self, days: i64) -> Result<u64, StorageError> {
+        let cutoff = chrono::Utc::now() - chrono::Duration::days(days);
+        let cutoff_str = cutoff.to_rfc3339();
+
+        // Delete clipboard contents that are:
+        // 1. Older than the cutoff date
+        // 2. Not referenced by any whiteboard item
+        let result = sqlx::query(
+            r#"
+            DELETE FROM clipboard_contents
+            WHERE copied_at < ?
+            AND id NOT IN (SELECT content_id FROM whiteboard_items)
+            "#,
+        )
+        .bind(&cutoff_str)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.rows_affected())
     }
 }

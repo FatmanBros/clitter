@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { listen } from "@tauri-apps/api/event";
+  import { onMount, onDestroy } from "svelte";
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X, Settings } from "lucide-svelte";
@@ -36,6 +36,14 @@
   let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
   let systemTheme: "light" | "dark" = "dark";
 
+  // Cleanup references
+  let unlistenClipboard: UnlistenFn | null = null;
+  let unlistenResized: UnlistenFn | null = null;
+  let unlistenMoved: UnlistenFn | null = null;
+  let unlistenFocusChanged: UnlistenFn | null = null;
+  let mediaQueryList: MediaQueryList | null = null;
+  let mediaQueryHandler: ((e: MediaQueryListEvent) => void) | null = null;
+
   // Detect system theme
   function detectSystemTheme() {
     if (typeof window !== "undefined" && window.matchMedia) {
@@ -69,12 +77,14 @@
     // Detect and listen for system theme changes
     detectSystemTheme();
     if (typeof window !== "undefined" && window.matchMedia) {
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
+      mediaQueryHandler = (e: MediaQueryListEvent) => {
         systemTheme = e.matches ? "dark" : "light";
-      });
+      };
+      mediaQueryList.addEventListener("change", mediaQueryHandler);
     }
 
-    await listen<ClipboardContent>("clipboard-changed", (event) => {
+    unlistenClipboard = await listen<ClipboardContent>("clipboard-changed", (event) => {
       clipboardHistory.update((history) => [event.payload, ...history].slice(0, 100));
     });
 
@@ -82,7 +92,7 @@
 
     // Save window size when user resizes by dragging
     let resizeTimeout: ReturnType<typeof setTimeout>;
-    await currentWindow.onResized(async ({ payload: physicalSize }) => {
+    unlistenResized = await currentWindow.onResized(async ({ payload: physicalSize }) => {
       isResizing = true;
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(async () => {
@@ -98,7 +108,7 @@
 
     // Save window position when moved
     let moveTimeout: ReturnType<typeof setTimeout>;
-    await currentWindow.onMoved(async ({ payload: physicalPosition }) => {
+    unlistenMoved = await currentWindow.onMoved(async ({ payload: physicalPosition }) => {
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const scaleFactor = await currentWindow.scaleFactor();
@@ -109,7 +119,7 @@
       }, 200);
     });
 
-    await currentWindow.onFocusChanged(({ payload: focused }) => {
+    unlistenFocusChanged = await currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused && wasHidden) {
         wasHidden = false;
         currentView.set("list");
@@ -133,6 +143,17 @@
       whiteboardState.set(wb);
     } catch (e) {
       console.error("Failed to load initial data:", e);
+    }
+  });
+
+  onDestroy(() => {
+    // Clean up all event listeners
+    unlistenClipboard?.();
+    unlistenResized?.();
+    unlistenMoved?.();
+    unlistenFocusChanged?.();
+    if (mediaQueryList && mediaQueryHandler) {
+      mediaQueryList.removeEventListener("change", mediaQueryHandler);
     }
   });
 

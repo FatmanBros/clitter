@@ -3,6 +3,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
+use tokio::sync::watch;
 
 use crate::clipboard::categorizer::Categorizer;
 use crate::types::{ClipboardContent, ClipboardData};
@@ -12,12 +13,19 @@ static LAST_CONTENT_HASH: AtomicU64 = AtomicU64::new(0);
 // Hash of content that was copied by Clitter itself (should be skipped)
 static SELF_COPIED_HASH: AtomicU64 = AtomicU64::new(0);
 
+// Shutdown signal sender (stored globally to allow shutdown from anywhere)
+static SHUTDOWN_TX: once_cell::sync::OnceCell<watch::Sender<bool>> = once_cell::sync::OnceCell::new();
+
 /// Mark a content hash as self-copied (will be skipped by monitor)
 pub fn mark_as_self_copied(hash: u64) {
     SELF_COPIED_HASH.store(hash, Ordering::Relaxed);
 }
 
 pub fn start_monitoring(app_handle: AppHandle) {
+    // Create shutdown channel
+    let (shutdown_tx, mut shutdown_rx) = watch::channel(false);
+    let _ = SHUTDOWN_TX.set(shutdown_tx);
+
     tauri::async_runtime::spawn(async move {
         let mut clipboard = match Clipboard::new() {
             Ok(cb) => cb,
@@ -30,19 +38,34 @@ pub fn start_monitoring(app_handle: AppHandle) {
         let mut interval = tokio::time::interval(Duration::from_secs(1));
 
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = interval.tick() => {
+                    if let Some(content) = check_clipboard_change(&mut clipboard) {
+                        // Add to volatile storage
+                        if let Some(state) = APP_STATE.get() {
+                            state.volatile_storage.add(content.clone()).await;
+                        }
 
-            if let Some(content) = check_clipboard_change(&mut clipboard) {
-                // Add to volatile storage
-                if let Some(state) = APP_STATE.get() {
-                    state.volatile_storage.add(content.clone()).await;
+                        // Emit event to frontend
+                        let _ = app_handle.emit("clipboard-changed", &content);
+                    }
                 }
-
-                // Emit event to frontend
-                let _ = app_handle.emit("clipboard-changed", &content);
+                _ = shutdown_rx.changed() => {
+                    if *shutdown_rx.borrow() {
+                        println!("Clipboard monitor shutting down gracefully");
+                        break;
+                    }
+                }
             }
         }
     });
+}
+
+/// Stop the clipboard monitoring gracefully
+pub fn stop_monitoring() {
+    if let Some(tx) = SHUTDOWN_TX.get() {
+        let _ = tx.send(true);
+    }
 }
 
 fn check_clipboard_change(clipboard: &mut Clipboard) -> Option<ClipboardContent> {

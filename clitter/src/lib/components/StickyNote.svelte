@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { Image, Type, Hash, Lock } from "lucide-svelte";
@@ -19,6 +20,14 @@
     numeric: Hash,
     secure: Lock,
   };
+
+  // Clean up mouse listeners if component is destroyed while dragging
+  onDestroy(() => {
+    if (isDragging) {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+  });
 
   function handleMouseDown(event: MouseEvent) {
     if (event.button !== 0) return;

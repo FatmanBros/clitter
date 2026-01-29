@@ -67,13 +67,7 @@ src-tauri/target/release/bundle/
 
 ## GitHub Actions 自動リリース
 
-コード管理リポジトリにpushすると、公開リポジトリに自動でリリースを作成。
-
-### セットアップ
-
-1. 公開用リポジトリ `clitter-releases` を作成
-2. Personal Access Token (PAT) を作成（`repo`スコープ）
-3. コード管理リポジトリのSecretに `RELEASE_TOKEN` として登録
+タグをpushすると、GitHub Actionsが自動でビルドしてリリースを作成。
 
 ### 実行
 

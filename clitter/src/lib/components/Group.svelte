@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { Folder, ChevronRight, ChevronDown } from "lucide-svelte";
   import { whiteboardState, enterGroup, matchedIds, isFiltering } from "$lib/stores/whiteboard";
@@ -10,6 +11,14 @@
   let isDragging = false;
   let startPos = { x: 0, y: 0 };
   let startGroupPos = { x: 0, y: 0 };
+
+  // Clean up mouse listeners if component is destroyed while dragging
+  onDestroy(() => {
+    if (isDragging) {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+  });
 
   function handleMouseDown(event: MouseEvent) {
     if (event.button !== 0) return;
