@@ -12,7 +12,7 @@
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPositions, updateWindowPosition, shortcutEditModal, settingsModal } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPositions, updateWindowPosition, shortcutEditModal, settingsModal, themeMode } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
@@ -33,6 +33,17 @@
   let wasHidden = true;
   let LogicalSize: typeof import("@tauri-apps/api/dpi").LogicalSize;
   let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
+  let systemTheme: "light" | "dark" = "dark";
+
+  // Detect system theme
+  function detectSystemTheme() {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+  }
+
+  // Compute actual theme based on settings
+  $: actualTheme = $themeMode === "system" ? systemTheme : $themeMode;
 
   async function applyWindowSizeAndPosition(mode: "list" | "whiteboard") {
     if (isResizing || !LogicalSize || !LogicalPosition) return;
@@ -53,6 +64,14 @@
     const dpi = await import("@tauri-apps/api/dpi");
     LogicalSize = dpi.LogicalSize;
     LogicalPosition = dpi.LogicalPosition;
+
+    // Detect and listen for system theme changes
+    detectSystemTheme();
+    if (typeof window !== "undefined" && window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        systemTheme = e.matches ? "dark" : "light";
+      });
+    }
 
     await listen<ClipboardContent>("clipboard-changed", (event) => {
       clipboardHistory.update((history) => [event.payload, ...history].slice(0, 100));
@@ -314,7 +333,7 @@
 
 <svelte:window on:keydown={handleKeydown} on:click={handleClick} />
 
-<main class="app-container">
+<main class="app-container theme-{actualTheme}">
   <!-- Title bar (draggable) -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="title-bar" on:mousedown={startDrag}>
@@ -420,21 +439,47 @@
   .app-container {
     height: 100vh;
     width: 100vw;
-    background: rgba(24, 24, 27, 0.95);
     backdrop-filter: blur(12px);
-    color: #e4e4e7;
     user-select: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* Default dark theme */
+    --bg-primary: rgba(24, 24, 27, 0.95);
+    --bg-secondary: rgba(0, 0, 0, 0.2);
+    --bg-hover: rgba(255, 255, 255, 0.05);
+    --bg-active: rgba(59, 130, 246, 0.1);
+    --border-color: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(255, 255, 255, 0.12);
+    --text-primary: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --accent: #3b82f6;
+    --accent-bg: rgba(59, 130, 246, 0.3);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .app-container.theme-light {
+    --bg-primary: rgba(255, 255, 255, 0.95);
+    --bg-secondary: rgba(0, 0, 0, 0.05);
+    --bg-hover: rgba(0, 0, 0, 0.05);
+    --bg-active: rgba(59, 130, 246, 0.1);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(0, 0, 0, 0.15);
+    --text-primary: #18181b;
+    --text-secondary: #52525b;
+    --text-muted: #71717a;
+    --accent: #3b82f6;
+    --accent-bg: rgba(59, 130, 246, 0.2);
   }
 
   .title-bar {
     display: flex;
     align-items: center;
     height: 32px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     cursor: grab;
   }
@@ -455,14 +500,14 @@
     height: 32px;
     background: transparent;
     border: none;
-    color: #71717a;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .title-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #a1a1aa;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
   }
 
   .title-btn.close:hover {
@@ -489,7 +534,7 @@
     gap: 4px;
     background: transparent;
     border: none;
-    color: #71717a;
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
@@ -498,31 +543,31 @@
   }
 
   .nav-btn:hover {
-    color: #a1a1aa;
-    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
   }
 
   .nav-btn.active {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent);
+    background: var(--bg-active);
   }
 
   .nav-top {
     grid-area: top;
     flex-direction: row;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .nav-left {
     grid-area: left;
     flex-direction: column;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid var(--border-color);
   }
 
   .nav-right {
     grid-area: right;
     flex-direction: column;
-    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 1px solid var(--border-color);
   }
 
   .nav-bottom {
@@ -531,7 +576,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border-color);
     padding: 0 12px;
   }
 
@@ -541,9 +586,9 @@
     gap: 4px;
     padding: 6px 12px;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #71717a;
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
@@ -551,15 +596,15 @@
   }
 
   .nav-btn-inline:hover {
-    color: #a1a1aa;
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
   }
 
   .nav-btn-inline.active {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
+    color: var(--accent);
+    background: var(--bg-active);
+    border-color: var(--accent-bg);
   }
 
   .main-content {
@@ -579,6 +624,6 @@
   .nav-bottom-single {
     flex-direction: row;
     padding: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border-color);
   }
 </style>

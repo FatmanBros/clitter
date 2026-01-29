@@ -1,6 +1,39 @@
 import { writable } from "svelte/store";
 import type { ViewMode, ContextMenuState } from "$lib/types";
 
+// Theme settings
+export type ThemeMode = "system" | "light" | "dark";
+
+function loadTheme(): ThemeMode {
+  try {
+    const saved = localStorage.getItem("clitter-theme");
+    if (saved === "system" || saved === "light" || saved === "dark") {
+      return saved;
+    }
+  } catch (e) {
+    console.error("Failed to load theme:", e);
+  }
+  return "system";
+}
+
+function saveTheme(theme: ThemeMode) {
+  try {
+    localStorage.setItem("clitter-theme", theme);
+  } catch (e) {
+    console.error("Failed to save theme:", e);
+  }
+}
+
+export const themeMode = writable<ThemeMode>(loadTheme());
+
+themeMode.subscribe((theme) => {
+  saveTheme(theme);
+});
+
+export function setTheme(theme: ThemeMode) {
+  themeMode.set(theme);
+}
+
 // Current view mode
 export const currentView = writable<ViewMode>("list");
 

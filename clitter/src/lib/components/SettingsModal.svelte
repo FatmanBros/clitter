@@ -1,23 +1,26 @@
 <script lang="ts">
-  import { X, Maximize2, Layout } from "lucide-svelte";
-  import { settingsModal, closeSettings, windowSizes, updateWindowSize } from "$lib/stores/ui";
+  import { X, Maximize2, Layout, Sun, Moon, Monitor } from "lucide-svelte";
+  import { settingsModal, closeSettings, windowSizes, updateWindowSize, themeMode, setTheme, type ThemeMode } from "$lib/stores/ui";
 
-  let activeTab: "list" | "whiteboard" = "list";
+  let activeTab: "general" | "list" | "whiteboard" = "general";
   let listWidth = $windowSizes.list.width;
   let listHeight = $windowSizes.list.height;
   let whiteboardWidth = $windowSizes.whiteboard.width;
   let whiteboardHeight = $windowSizes.whiteboard.height;
+  let selectedTheme: ThemeMode = $themeMode;
 
   $: if ($settingsModal.show) {
     listWidth = $windowSizes.list.width;
     listHeight = $windowSizes.list.height;
     whiteboardWidth = $windowSizes.whiteboard.width;
     whiteboardHeight = $windowSizes.whiteboard.height;
+    selectedTheme = $themeMode;
   }
 
   function handleSave() {
     updateWindowSize("list", listWidth, listHeight);
     updateWindowSize("whiteboard", whiteboardWidth, whiteboardHeight);
+    setTheme(selectedTheme);
     closeSettings();
   }
 
@@ -46,6 +49,14 @@
         <nav class="sidebar">
           <button
             class="nav-item"
+            class:active={activeTab === "general"}
+            on:click={() => (activeTab = "general")}
+          >
+            <Sun size={16} strokeWidth={1.5} />
+            <span>General</span>
+          </button>
+          <button
+            class="nav-item"
             class:active={activeTab === "list"}
             on:click={() => (activeTab = "list")}
           >
@@ -63,7 +74,38 @@
         </nav>
 
         <div class="settings-panel">
-          {#if activeTab === "list"}
+          {#if activeTab === "general"}
+            <div class="panel-header">
+              <h4>Theme</h4>
+              <p class="hint">Choose your preferred color scheme</p>
+            </div>
+            <div class="theme-options">
+              <button
+                class="theme-btn"
+                class:active={selectedTheme === "system"}
+                on:click={() => (selectedTheme = "system")}
+              >
+                <Monitor size={20} strokeWidth={1.5} />
+                <span>System</span>
+              </button>
+              <button
+                class="theme-btn"
+                class:active={selectedTheme === "light"}
+                on:click={() => (selectedTheme = "light")}
+              >
+                <Sun size={20} strokeWidth={1.5} />
+                <span>Light</span>
+              </button>
+              <button
+                class="theme-btn"
+                class:active={selectedTheme === "dark"}
+                on:click={() => (selectedTheme = "dark")}
+              >
+                <Moon size={20} strokeWidth={1.5} />
+                <span>Dark</span>
+              </button>
+            </div>
+          {:else if activeTab === "list"}
             <div class="panel-header">
               <h4>List Mode Size</h4>
               <p class="hint">Window size for clipboard list view</p>
@@ -325,5 +367,42 @@
 
   .btn-primary:hover {
     background: #2563eb;
+  }
+
+  .theme-options {
+    display: flex;
+    gap: 12px;
+  }
+
+  .theme-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #a1a1aa;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .theme-btn:hover {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #d4d4d8;
+  }
+
+  .theme-btn.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  .theme-btn span {
+    font-size: 12px;
+    font-weight: 500;
   }
 </style>
