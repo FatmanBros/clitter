@@ -65,42 +65,53 @@ windowSizes.subscribe((sizes) => {
   saveSizes(sizes);
 });
 
-// Window position (global for all modes)
+// Window positions (separate for each mode)
 export interface WindowPosition {
   x: number;
   y: number;
 }
 
-const DEFAULT_POSITION: WindowPosition = { x: 100, y: 100 };
+export interface WindowPositions {
+  list: WindowPosition;
+  whiteboard: WindowPosition;
+}
 
-function loadPosition(): WindowPosition {
+const DEFAULT_POSITIONS: WindowPositions = {
+  list: { x: 100, y: 100 },
+  whiteboard: { x: 100, y: 100 },
+};
+
+function loadPositions(): WindowPositions {
   try {
-    const saved = localStorage.getItem("clitter-window-position");
+    const saved = localStorage.getItem("clitter-window-positions");
     if (saved) {
       return JSON.parse(saved);
     }
   } catch (e) {
-    console.error("Failed to load window position:", e);
+    console.error("Failed to load window positions:", e);
   }
-  return DEFAULT_POSITION;
+  return DEFAULT_POSITIONS;
 }
 
-function savePosition(position: WindowPosition) {
+function savePositions(positions: WindowPositions) {
   try {
-    localStorage.setItem("clitter-window-position", JSON.stringify(position));
+    localStorage.setItem("clitter-window-positions", JSON.stringify(positions));
   } catch (e) {
-    console.error("Failed to save window position:", e);
+    console.error("Failed to save window positions:", e);
   }
 }
 
-export const windowPosition = writable<WindowPosition>(loadPosition());
+export const windowPositions = writable<WindowPositions>(loadPositions());
 
-windowPosition.subscribe((position) => {
-  savePosition(position);
+windowPositions.subscribe((positions) => {
+  savePositions(positions);
 });
 
-export function updateWindowPosition(x: number, y: number) {
-  windowPosition.set({ x, y });
+export function updateWindowPosition(mode: "list" | "whiteboard", x: number, y: number) {
+  windowPositions.update((positions) => ({
+    ...positions,
+    [mode]: { x, y },
+  }));
 }
 
 // Actions

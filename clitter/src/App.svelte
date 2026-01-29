@@ -12,7 +12,7 @@
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
   import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
-  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPosition, updateWindowPosition, shortcutEditModal, settingsModal } from "$lib/stores/ui";
+  import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPositions, updateWindowPosition, shortcutEditModal, settingsModal } from "$lib/stores/ui";
   import {
     whiteboardState,
     shortcutInput,
@@ -34,17 +34,19 @@
   let LogicalSize: typeof import("@tauri-apps/api/dpi").LogicalSize;
   let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
 
-  async function applyWindowSize(mode: "list" | "whiteboard") {
-    if (isResizing || !LogicalSize) return;
+  async function applyWindowSizeAndPosition(mode: "list" | "whiteboard") {
+    if (isResizing || !LogicalSize || !LogicalPosition) return;
     const sizes = $windowSizes[mode];
+    const pos = $windowPositions[mode];
     const window = getCurrentWindow();
     await window.setSize(new LogicalSize(sizes.width, sizes.height));
+    await window.setPosition(new LogicalPosition(pos.x, pos.y));
   }
 
-  // Watch for view changes and apply window size
+  // Watch for view changes and apply window size and position
   $: if ($currentView && $currentView !== lastAppliedView) {
     lastAppliedView = $currentView;
-    applyWindowSize($currentView);
+    applyWindowSizeAndPosition($currentView);
   }
 
   onMount(async () => {
@@ -82,7 +84,8 @@
         const scaleFactor = await currentWindow.scaleFactor();
         const logicalX = Math.round(physicalPosition.x / scaleFactor);
         const logicalY = Math.round(physicalPosition.y / scaleFactor);
-        updateWindowPosition(logicalX, logicalY);
+        const mode = $currentView;
+        updateWindowPosition(mode, logicalX, logicalY);
       }, 200);
     });
 
@@ -91,14 +94,14 @@
         wasHidden = false;
         currentView.set("list");
         selectedCategory.set(null);
-        // Apply saved position
-        const pos = $windowPosition;
+        // Apply saved position for list view
+        const pos = $windowPositions.list;
         currentWindow.setPosition(new LogicalPosition(pos.x, pos.y));
       }
     });
 
-    // Apply initial position
-    const initialPos = $windowPosition;
+    // Apply initial position for list view
+    const initialPos = $windowPositions.list;
     await currentWindow.setPosition(new LogicalPosition(initialPos.x, initialPos.y));
 
     try {
