@@ -11,7 +11,7 @@
   import ShortcutEditModal from "$lib/components/ShortcutEditModal.svelte";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
-  import { clipboardHistory, selectedCategory, filteredHistory } from "$lib/stores/clipboard";
+  import { clipboardHistory, selectedCategory, filteredHistory, listScrollOffset, scrollListUp, scrollListDown, canScrollUp, canScrollDown } from "$lib/stores/clipboard";
   import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPositions, updateWindowPosition, shortcutEditModal, settingsModal, themeMode } from "$lib/stores/ui";
   import {
     whiteboardState,
@@ -114,6 +114,7 @@
         wasHidden = false;
         currentView.set("list");
         selectedCategory.set(null);
+        listScrollOffset.set(0); // Reset scroll position
         // Apply saved position for list view
         const pos = $windowPositions.list;
         currentWindow.setPosition(new LogicalPosition(pos.x, pos.y));
@@ -195,6 +196,20 @@
   }
 
   function handleListKeydown(event: KeyboardEvent) {
+    // Handle scroll with Shift or Alt + Arrow keys
+    if (event.shiftKey || event.altKey) {
+      if (event.key === "ArrowUp") {
+        scrollListUp();
+        event.preventDefault();
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        scrollListDown();
+        event.preventDefault();
+        return;
+      }
+    }
+
     switch (event.key) {
       case "ArrowLeft":
         selectedCategory.set("image");
