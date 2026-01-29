@@ -37,7 +37,7 @@ pub fn set_image_to_clipboard(rgba_bytes: &[u8], width: u32, height: u32) -> Res
 
     unsafe {
         // Open clipboard
-        OpenClipboard(HWND::default()).map_err(|e| format!("Failed to open clipboard: {}", e))?;
+        OpenClipboard(Some(HWND::default())).map_err(|e| format!("Failed to open clipboard: {}", e))?;
 
         // Empty clipboard
         if let Err(e) = EmptyClipboard() {
@@ -94,7 +94,7 @@ unsafe fn set_dib_data(rgba_bytes: &[u8], width: u32, height: u32) -> Result<(),
 
     let ptr = GlobalLock(hglobal);
     if ptr.is_null() {
-        let _ = GlobalFree(hglobal);
+        let _ = GlobalFree(Some(hglobal));
         return Err("Failed to lock DIB memory".to_string());
     }
 
@@ -138,7 +138,7 @@ unsafe fn set_dib_data(rgba_bytes: &[u8], width: u32, height: u32) -> Result<(),
 
     let _ = GlobalUnlock(hglobal);
 
-    SetClipboardData(CF_DIB, HANDLE(hglobal.0 as *mut std::ffi::c_void))
+    SetClipboardData(CF_DIB, Some(HANDLE(hglobal.0 as *mut std::ffi::c_void)))
         .map_err(|_| "Failed to set DIB clipboard data".to_string())?;
 
     Ok(())
@@ -162,7 +162,7 @@ unsafe fn set_hdrop_data(file_path: &str) -> Result<(), String> {
 
     let ptr = GlobalLock(hglobal);
     if ptr.is_null() {
-        let _ = GlobalFree(hglobal);
+        let _ = GlobalFree(Some(hglobal));
         return Err("Failed to lock HDROP memory".to_string());
     }
 
@@ -189,7 +189,7 @@ unsafe fn set_hdrop_data(file_path: &str) -> Result<(), String> {
 
     let _ = GlobalUnlock(hglobal);
 
-    SetClipboardData(CF_HDROP, HANDLE(hglobal.0 as *mut std::ffi::c_void))
+    SetClipboardData(CF_HDROP, Some(HANDLE(hglobal.0 as *mut std::ffi::c_void)))
         .map_err(|_| "Failed to set HDROP clipboard data".to_string())?;
 
     Ok(())
