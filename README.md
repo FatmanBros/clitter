@@ -1,6 +1,12 @@
-# Clitter
+<p align="center">
+  <img src="assets/hero.png" alt="Clitter" width="400">
+</p>
 
-A modern clipboard management application for Windows, built with Tauri 2 and Svelte.
+<h1 align="center">Clitter</h1>
+
+<p align="center">
+  A modern clipboard management application for Windows, built with Tauri 2 and Svelte.
+</p>
 
 ## Features
 
