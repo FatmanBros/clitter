@@ -141,8 +141,8 @@
 
   .shortcut-bar {
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .shortcut-input {
@@ -156,29 +156,29 @@
   .path-root {
     display: flex;
     align-items: center;
-    color: #71717a;
+    color: var(--text-muted);
   }
 
   .group-segment {
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 12px;
-    color: #a1a1aa;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-hover);
   }
 
   .separator {
-    color: #52525b;
+    color: var(--text-muted);
   }
 
   .input-text {
     font-family: monospace;
-    color: #e4e4e7;
+    color: var(--text-primary);
   }
 
   .match-count {
-    color: #52525b;
+    color: var(--text-muted);
     font-size: 11px;
   }
 
@@ -192,21 +192,21 @@
   .match-item {
     padding: 2px 8px;
     font-size: 11px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-hover);
     border-radius: 4px;
-    color: #a1a1aa;
+    color: var(--text-secondary);
   }
 
   .match-item.is-group {
-    background: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
+    background: var(--bg-active);
+    color: var(--accent);
   }
 
   .whiteboard-canvas {
     flex: 1;
     position: relative;
     overflow: auto;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--bg-secondary);
   }
 
   .empty-state {
@@ -216,13 +216,13 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #52525b;
+    color: var(--text-muted);
   }
 
   .empty-state .title {
     font-size: 16px;
     margin: 0 0 8px 0;
-    color: #71717a;
+    color: var(--text-secondary);
   }
 
   .empty-state .hint {

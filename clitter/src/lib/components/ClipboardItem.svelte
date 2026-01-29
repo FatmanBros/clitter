@@ -87,16 +87,16 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .clipboard-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
+    border-color: var(--border-hover);
   }
 
   .clipboard-item:active {
@@ -118,8 +118,8 @@
     justify-content: center;
     width: 20px;
     height: 20px;
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: var(--bg-active);
+    color: var(--accent);
     font-size: 11px;
     font-weight: 600;
     border-radius: 4px;
@@ -127,7 +127,7 @@
   }
 
   .category-icon {
-    color: #71717a;
+    color: var(--text-muted);
     flex-shrink: 0;
   }
 
@@ -140,7 +140,7 @@
   .preview-text {
     margin: 0;
     font-size: 13px;
-    color: #d4d4d8;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -151,6 +151,6 @@
     max-height: 48px;
     object-fit: contain;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-secondary);
   }
 </style>

@@ -116,11 +116,11 @@
   }
 
   .modal {
-    background: rgba(39, 39, 42, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 320px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 16px 48px var(--shadow-color, rgba(0, 0, 0, 0.5));
   }
 
   .modal-header {
@@ -128,14 +128,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .modal-header h3 {
     margin: 0;
     font-size: 15px;
     font-weight: 600;
-    color: #e4e4e7;
+    color: var(--text-primary);
   }
 
   .close-btn {
@@ -147,14 +147,14 @@
     background: transparent;
     border: none;
     border-radius: 6px;
-    color: #71717a;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.1s ease;
   }
 
   .close-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #a1a1aa;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
   }
 
   .modal-body {
@@ -164,17 +164,17 @@
   .label {
     display: block;
     font-size: 12px;
-    color: #a1a1aa;
+    color: var(--text-secondary);
     margin-bottom: 6px;
   }
 
   .input {
     width: 100%;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: #e4e4e7;
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: border-color 0.15s ease;
@@ -183,17 +183,17 @@
   }
 
   .input:focus {
-    border-color: #3b82f6;
+    border-color: var(--accent);
   }
 
   .input::placeholder {
-    color: #52525b;
+    color: var(--text-muted);
   }
 
   .hint {
     margin: 8px 0 0 0;
     font-size: 11px;
-    color: #52525b;
+    color: var(--text-muted);
   }
 
   .modal-footer {
@@ -201,7 +201,7 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
   }
 
   .btn {
@@ -215,17 +215,17 @@
 
   .btn-secondary {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #a1a1aa;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
   }
 
   .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
   }
 
   .btn-primary {
-    background: #3b82f6;
+    background: var(--accent);
     border: none;
     color: white;
   }

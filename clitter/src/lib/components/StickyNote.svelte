@@ -157,15 +157,15 @@
     cursor: pointer;
     user-select: none;
     transition: box-shadow 0.15s ease, transform 0.1s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
   }
 
   .sticky-note:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.3));
   }
 
   .sticky-note.dragging {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 24px var(--shadow-color, rgba(0, 0, 0, 0.4));
     z-index: 50;
   }
 
@@ -194,7 +194,7 @@
     top: -6px;
     right: -6px;
     padding: 1px 4px;
-    background: #3b82f6;
+    background: var(--accent);
     color: white;
     font-size: 9px;
     font-weight: 600;
@@ -208,7 +208,7 @@
   }
 
   .category-icon {
-    color: #71717a;
+    color: var(--text-muted);
     flex-shrink: 0;
     margin-top: 1px;
   }
@@ -223,13 +223,13 @@
     margin: 0 0 2px 0;
     font-size: 10px;
     font-weight: 600;
-    color: #a1a1aa;
+    color: var(--text-secondary);
   }
 
   .preview-text {
     margin: 0;
     font-size: 10px;
-    color: #d4d4d8;
+    color: var(--text-primary);
     word-wrap: break-word;
     line-height: 1.3;
   }

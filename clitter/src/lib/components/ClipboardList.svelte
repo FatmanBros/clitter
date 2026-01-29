@@ -32,7 +32,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: #52525b;
+    color: var(--text-muted);
   }
 
   .empty-state p {

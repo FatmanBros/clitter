@@ -300,14 +300,14 @@
 <style>
   .context-menu {
     position: fixed;
-    background: rgba(39, 39, 42, 0.95);
+    background: var(--bg-primary);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 4px;
     min-width: 150px;
     z-index: 100;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 24px var(--shadow-color, rgba(0, 0, 0, 0.4));
   }
 
   .menu-item {
@@ -319,7 +319,7 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    color: #d4d4d8;
+    color: var(--text-primary);
     font-size: 13px;
     cursor: pointer;
     text-align: left;
@@ -327,7 +327,7 @@
   }
 
   .menu-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-hover);
   }
 
   .menu-item.danger {
@@ -340,7 +340,7 @@
 
   .divider {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
     margin: 4px 0;
   }
 
@@ -354,7 +354,7 @@
   .color-option {
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--border-hover);
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -362,15 +362,15 @@
     justify-content: center;
     transition: all 0.1s ease;
     font-size: 12px;
-    color: #71717a;
+    color: var(--text-muted);
   }
 
   .color-option:hover {
     transform: scale(1.15);
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: var(--text-secondary);
   }
 
   .color-option.no-color {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
   }
 </style>

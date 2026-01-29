@@ -139,11 +139,11 @@
   }
 
   .group-container:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.3));
   }
 
   .group-container.dragging {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 24px var(--shadow-color, rgba(0, 0, 0, 0.4));
     z-index: 50;
   }
 
@@ -180,19 +180,19 @@
   }
 
   .collapse-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
   }
 
   .group-name {
     flex: 1;
     font-size: 13px;
     font-weight: 500;
-    color: #d4d4d8;
+    color: var(--text-primary);
   }
 
   .child-count {
     font-size: 11px;
-    color: #71717a;
+    color: var(--text-muted);
   }
 
   .group-body {
@@ -203,6 +203,6 @@
   .group-body p {
     margin: 0;
     font-size: 11px;
-    color: #52525b;
+    color: var(--text-muted);
   }
 </style>
