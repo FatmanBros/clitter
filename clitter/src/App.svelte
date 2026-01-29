@@ -17,6 +17,7 @@
     whiteboardState,
     shortcutInput,
     exactMatch,
+    matchedShortcuts,
     clearShortcutInput,
     appendToShortcutInput,
     backspaceShortcutInput,
@@ -301,6 +302,16 @@
             enterGroup($exactMatch.id);
           }
           clearShortcutInput();
+        }
+        event.preventDefault();
+        break;
+      case "Tab":
+        // Autocomplete to first matched shortcut
+        if ($shortcutInput && $matchedShortcuts.length > 0) {
+          const firstMatch = $matchedShortcuts[0];
+          // Use shortcut if available, otherwise use label or name
+          const completion = firstMatch.shortcut || firstMatch.label || firstMatch.name;
+          shortcutInput.set(completion.toLowerCase());
         }
         event.preventDefault();
         break;

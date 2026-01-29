@@ -2,7 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { Image, Type, Hash, Lock } from "lucide-svelte";
-  import { whiteboardState } from "$lib/stores/whiteboard";
+  import { whiteboardState, matchedIds, isFiltering } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
   import type { WhiteboardItem } from "$lib/types";
 
@@ -112,11 +112,13 @@
     numeric: "category-numeric",
     secure: "category-secure",
   }[item.content.category];
+  $: isDimmed = $isFiltering && !$matchedIds.has(item.id);
 </script>
 
 <div
   class="sticky-note {categoryClass}"
   class:dragging={isDragging}
+  class:dimmed={isDimmed}
   style="left: {item.position.x}px; top: {item.position.y}px;
          width: {item.size.width}px;"
   role="button"
@@ -167,6 +169,11 @@
   .sticky-note.dragging {
     box-shadow: 0 8px 24px var(--shadow-color, rgba(0, 0, 0, 0.4));
     z-index: 50;
+  }
+
+  .sticky-note.dimmed {
+    opacity: 0.3;
+    pointer-events: none;
   }
 
   .category-text {

@@ -112,6 +112,18 @@ export const matchedShortcuts = derived(
   }
 );
 
+// Set of matched IDs for highlighting (empty means no filtering active)
+export const matchedIds = derived(
+  [matchedShortcuts, shortcutInput],
+  ([$matched, $input]) => {
+    if (!$input) return new Set<string>();
+    return new Set($matched.map((m) => m.id));
+  }
+);
+
+// Whether filtering is active
+export const isFiltering = derived(shortcutInput, ($input) => $input.length > 0);
+
 // Exact match (for Enter key action)
 export const exactMatch = derived(
   [allShortcuts, shortcutInput],

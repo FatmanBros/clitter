@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { Folder, ChevronRight, ChevronDown } from "lucide-svelte";
-  import { whiteboardState, enterGroup } from "$lib/stores/whiteboard";
+  import { whiteboardState, enterGroup, matchedIds, isFiltering } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
   import type { Group } from "$lib/types";
 
@@ -88,11 +88,13 @@
   ).length;
 
   $: groupColor = group.color || "#3b82f6";
+  $: isDimmed = $isFiltering && !$matchedIds.has(group.id);
 </script>
 
 <div
   class="group-container"
   class:dragging={isDragging}
+  class:dimmed={isDimmed}
   style="left: {group.position.x}px; top: {group.position.y}px;
          background: {groupColor}15; border-color: {groupColor}50;"
   role="button"
@@ -145,6 +147,11 @@
   .group-container.dragging {
     box-shadow: 0 8px 24px var(--shadow-color, rgba(0, 0, 0, 0.4));
     z-index: 50;
+  }
+
+  .group-container.dimmed {
+    opacity: 0.3;
+    pointer-events: none;
   }
 
   .shortcut-badge {
