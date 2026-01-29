@@ -60,7 +60,7 @@
   on:dragstart={handleDragStart}
   on:dragend={handleDragEnd}
 >
-  {#if index < 5}
+  {#if index < 9}
     <span class="index-badge">{index + 1}</span>
   {/if}
 
