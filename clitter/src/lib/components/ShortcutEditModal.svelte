@@ -28,11 +28,9 @@
           return state;
         });
       } else if ($shortcutEditModal.targetType === "group") {
-        await invoke("update_group", {
+        await invoke("set_group_shortcut", {
           id: $shortcutEditModal.targetId,
-          name: undefined,
-          collapsed: undefined,
-          position: undefined,
+          shortcut,
         });
         whiteboardState.update((state) => {
           if (state.groups[$shortcutEditModal.targetId!]) {
@@ -70,14 +68,14 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="modal" on:click|stopPropagation on:keydown|stopPropagation>
       <div class="modal-header">
-        <h3>Set Shortcut</h3>
+        <h3>Set Alias</h3>
         <button class="close-btn" on:click={closeShortcutEdit}>
           <X size={16} strokeWidth={1.5} />
         </button>
       </div>
 
       <div class="modal-body">
-        <label class="label" for="shortcut-input">Shortcut key</label>
+        <label class="label" for="shortcut-input">Alias</label>
         <!-- svelte-ignore a11y_autofocus -->
         <input
           id="shortcut-input"

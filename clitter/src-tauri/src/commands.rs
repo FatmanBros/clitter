@@ -380,6 +380,23 @@ pub async fn set_item_shortcut(id: String, shortcut: Option<String>) -> Result<(
 }
 
 #[tauri::command]
+pub async fn set_group_shortcut(id: String, shortcut: Option<String>) -> Result<(), String> {
+    let state = APP_STATE.get().ok_or("App state not initialized")?;
+    let storage = state.persistent_storage.read().await;
+
+    let id = Uuid::parse_str(&id).map_err(|e| e.to_string())?;
+
+    if let Some(storage) = storage.as_ref() {
+        storage
+            .update_group_shortcut(id, shortcut)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_items_with_shortcuts() -> Result<Vec<(String, String)>, String> {
     let state = APP_STATE.get().ok_or("App state not initialized")?;
     let storage = state.persistent_storage.read().await;

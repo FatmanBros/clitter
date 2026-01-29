@@ -90,6 +90,7 @@ pub fn run() {
             commands::delete_group,
             commands::set_group_color,
             commands::set_item_shortcut,
+            commands::set_group_shortcut,
             commands::get_items_with_shortcuts,
             commands::import_whiteboard_json,
             commands::export_whiteboard_json,

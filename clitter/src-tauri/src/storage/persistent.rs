@@ -445,6 +445,20 @@ impl PersistentStorage {
         Ok(())
     }
 
+    pub async fn update_group_shortcut(
+        &self,
+        id: Uuid,
+        shortcut: Option<String>,
+    ) -> Result<(), StorageError> {
+        sqlx::query("UPDATE groups SET shortcut = ?, updated_at = ? WHERE id = ?")
+            .bind(shortcut)
+            .bind(chrono::Utc::now().to_rfc3339())
+            .bind(id.to_string())
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     pub async fn get_items_with_shortcuts(&self) -> Result<Vec<(String, Uuid)>, StorageError> {
         let rows = sqlx::query("SELECT id, shortcut FROM whiteboard_items WHERE shortcut IS NOT NULL")
             .fetch_all(&self.pool)

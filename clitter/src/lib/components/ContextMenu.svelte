@@ -257,7 +257,7 @@
     {:else if $contextMenu.target?.type === "group"}
       <button class="menu-item" on:click={handleSetShortcut}>
         <Keyboard size={14} strokeWidth={1.5} />
-        Set Shortcut
+        Set Alias
       </button>
       <button class="menu-item" on:click={toggleColorPicker}>
         <Palette size={14} strokeWidth={1.5} />
@@ -286,7 +286,7 @@
     {:else}
       <button class="menu-item" on:click={handleSetShortcut}>
         <Keyboard size={14} strokeWidth={1.5} />
-        Set Shortcut
+        Set Alias
       </button>
       <hr class="divider" />
       <button class="menu-item danger" on:click={handleDelete}>
