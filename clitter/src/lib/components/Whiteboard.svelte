@@ -80,7 +80,7 @@
           {/if}
           <span
             class="group-segment"
-            style={segment.color ? `background-color: ${segment.color}22; border-color: ${segment.color}66;` : ''}
+            style={segment.color ? `background-color: ${segment.color}25; border-color: ${segment.color}; color: ${segment.color};` : ''}
           >
             {segment.name}
           </span>
