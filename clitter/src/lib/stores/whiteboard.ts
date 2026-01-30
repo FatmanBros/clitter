@@ -99,16 +99,31 @@ export const allShortcuts = derived(
 );
 
 // Matched shortcuts based on input
+// Priority: name/label matches first, then alias matches
 export const matchedShortcuts = derived(
   [allShortcuts, shortcutInput],
   ([$shortcuts, $input]) => {
     if (!$input) return $shortcuts;
     const inputLower = $input.toLowerCase();
-    return $shortcuts.filter((s) =>
-      (s.shortcut && s.shortcut.toLowerCase().startsWith(inputLower)) ||
-      (s.type === "group" && s.name.toLowerCase().startsWith(inputLower)) ||
-      (s.type === "item" && s.label && s.label.toLowerCase().startsWith(inputLower))
-    );
+
+    // Separate matches by type: name/label matches vs alias matches
+    const nameMatches: ShortcutMatch[] = [];
+    const aliasMatches: ShortcutMatch[] = [];
+
+    for (const s of $shortcuts) {
+      const nameMatch = (s.type === "group" && s.name.toLowerCase().startsWith(inputLower)) ||
+                        (s.type === "item" && s.label && s.label.toLowerCase().startsWith(inputLower));
+      const aliasMatch = s.shortcut && s.shortcut.toLowerCase().startsWith(inputLower);
+
+      if (nameMatch) {
+        nameMatches.push(s);
+      } else if (aliasMatch) {
+        aliasMatches.push(s);
+      }
+    }
+
+    // Name matches take priority over alias matches
+    return [...nameMatches, ...aliasMatches];
   }
 );
 

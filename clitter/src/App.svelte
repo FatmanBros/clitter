@@ -347,10 +347,19 @@
         break;
       case "Tab":
         // Autocomplete to first matched shortcut
+        // Priority: name/label > alias (shortcut)
         if ($shortcutInput && $matchedShortcuts.length > 0) {
           const firstMatch = $matchedShortcuts[0];
-          // Use shortcut if available, otherwise use label or name
-          const completion = firstMatch.shortcut || firstMatch.label || firstMatch.name;
+          const inputLower = $shortcutInput.toLowerCase();
+          // Check if name/label matches the input, use that; otherwise fall back to shortcut
+          let completion: string;
+          if (firstMatch.type === "group" && firstMatch.name.toLowerCase().startsWith(inputLower)) {
+            completion = firstMatch.name;
+          } else if (firstMatch.type === "item" && firstMatch.label?.toLowerCase().startsWith(inputLower)) {
+            completion = firstMatch.label;
+          } else {
+            completion = firstMatch.shortcut || firstMatch.name;
+          }
           shortcutInput.set(completion.toLowerCase());
         }
         event.preventDefault();
