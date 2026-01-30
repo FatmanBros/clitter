@@ -153,7 +153,7 @@ jobs:
           fi
 
       - name: Create Release on public repo
-        uses: softprops/action-gh-release@c062e08bd532815e2082a375e5a7ec6e0a5c94f7  # v2.2.1
+        uses: softprops/action-gh-release@v2
         with:
           repository: ${{ env.RELEASE_REPO }}
           tag_name: ${{ steps.version.outputs.version }}
