@@ -56,7 +56,7 @@ jobs:
         run: find artifacts -type f -name "*"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
         with:
           draft: false
           prerelease: false
