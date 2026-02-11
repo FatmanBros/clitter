@@ -9,6 +9,7 @@ pub enum Category {
     Image,
     Numeric,
     Secure,
+    Url,
 }
 
 impl std::fmt::Display for Category {
@@ -18,6 +19,7 @@ impl std::fmt::Display for Category {
             Category::Image => write!(f, "image"),
             Category::Numeric => write!(f, "numeric"),
             Category::Secure => write!(f, "secure"),
+            Category::Url => write!(f, "url"),
         }
     }
 }
@@ -31,6 +33,7 @@ impl std::str::FromStr for Category {
             "image" => Ok(Category::Image),
             "numeric" => Ok(Category::Numeric),
             "secure" => Ok(Category::Secure),
+            "url" => Ok(Category::Url),
             _ => Err(format!("Unknown category: {}", s)),
         }
     }

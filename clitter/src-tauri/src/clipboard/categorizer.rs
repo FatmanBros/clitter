@@ -5,16 +5,39 @@ use crate::types::{Category, ClipboardData};
 
 static NUMERIC_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[\d,.\-/\s]+$").unwrap());
 
+// URL pattern: matches http:// or https:// URLs
+static URL_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^https?://[^\s]+$").unwrap()
+});
+
 static SECURE_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
+        // Key-value patterns (api_key=, password:, etc.)
         Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]").unwrap(),
         Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]").unwrap(),
         Regex::new(r"(?i)(secret|token|bearer)\s*[:=]").unwrap(),
         Regex::new(r"(?i)(private[_-]?key)").unwrap(),
-        Regex::new(r"(?i)^(sk|pk|api|key)[_-][a-zA-Z0-9]{20,}$").unwrap(),
-        Regex::new(r"^[A-Za-z0-9+/]{40,}={0,2}$").unwrap(), // Base64-like long string
-        Regex::new(r"^[a-f0-9]{32,}$").unwrap(),            // Hex string (API keys)
-        Regex::new(r"(?i)(aws|azure|gcp|github|gitlab)[_-]?(secret|key|token)").unwrap(),
+        Regex::new(r"(?i)(access[_-]?token|auth[_-]?token)\s*[:=]").unwrap(),
+        Regex::new(r"(?i)(client[_-]?secret|client[_-]?id)\s*[:=]").unwrap(),
+        Regex::new(r"(?i)(credentials?|auth)\s*[:=]").unwrap(),
+        // Keyword-only patterns (secrets, confidential, etc.)
+        Regex::new(r"(?i)\b(secrets?|confidential|sensitive)\b").unwrap(),
+        // API key prefixes (common patterns)
+        Regex::new(r"(?i)^(sk|pk|api|key|secret|token)[_-][a-zA-Z0-9]{16,}$").unwrap(),
+        // Long base64-like strings (40+ chars, likely tokens)
+        Regex::new(r"^[A-Za-z0-9+/]{40,}={0,2}$").unwrap(),
+        // Hex strings 32+ chars (API keys, hashes)
+        Regex::new(r"^[a-f0-9]{32,}$").unwrap(),
+        // Cloud provider patterns
+        Regex::new(r"(?i)(aws|azure|gcp|github|gitlab|slack|stripe|twilio|sendgrid)[_-]?(secret|key|token|api)").unwrap(),
+        // Database connection strings
+        Regex::new(r"(?i)(mongodb|postgres|mysql|redis|mssql)://").unwrap(),
+        // JWT tokens
+        Regex::new(r"^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$").unwrap(),
+        // SSH/PGP key markers
+        Regex::new(r"(?i)-----BEGIN\s+(RSA\s+)?(PRIVATE|ENCRYPTED|OPENSSH)").unwrap(),
+        // Environment variable declarations with sensitive names
+        Regex::new(r"(?i)^(export\s+)?(DB_|DATABASE_|MONGO_|REDIS_|AWS_|AZURE_|GCP_|API_|SECRET_|TOKEN_|AUTH_|PRIVATE_)[A-Z_]+=").unwrap(),
     ]
 });
 
@@ -36,6 +59,11 @@ impl Categorizer {
             if pattern.is_match(trimmed) {
                 return Category::Secure;
             }
+        }
+
+        // Check for URL pattern
+        if URL_PATTERN.is_match(trimmed) {
+            return Category::Url;
         }
 
         // Check for numeric pattern

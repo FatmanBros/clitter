@@ -1,5 +1,5 @@
 // Category types
-export type Category = "text" | "image" | "numeric" | "secure";
+export type Category = "text" | "image" | "numeric" | "secure" | "url";
 
 // Clipboard data types
 export interface TextData {
