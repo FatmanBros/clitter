@@ -48,7 +48,6 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            clitter/src-tauri/target/release/clitter.exe
             clitter/src-tauri/target/release/bundle/msi/*.msi
             clitter/src-tauri/target/release/bundle/nsis/*.exe
 
@@ -151,7 +150,7 @@ jobs:
         working-directory: .
         run: |
           mkdir -p release
-          find artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" \) -exec cp {} release/ \;
+          find artifacts -type f \( -name "*-setup.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" \) -exec cp {} release/ \;
           ls -la release/
 
       - name: Get version
