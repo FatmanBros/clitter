@@ -240,18 +240,11 @@
 
     switch (event.key) {
       case "ArrowUp":
-        if ($selectedIndex > 0) {
-          selectedIndex.update(i => i - 1);
-        } else {
-          // At top of list, go to whiteboard
-          currentView.set("whiteboard");
-        }
+        currentView.set("whiteboard");
         event.preventDefault();
         break;
       case "ArrowDown":
-        if ($selectedIndex < maxIndex) {
-          selectedIndex.update(i => i + 1);
-        }
+        selectedCategory.set("url");
         event.preventDefault();
         break;
       case "ArrowLeft":
