@@ -3,6 +3,7 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use argon2::{Algorithm, Argon2, Params, Version};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use rand::RngCore;
 use thiserror::Error;
 
@@ -19,6 +20,8 @@ pub enum CryptoError {
     DecryptionFailed,
     #[error("Key derivation failed")]
     KeyDerivationFailed,
+    #[error("Base64 decode failed")]
+    Base64DecodeFailed,
 }
 
 pub struct SecureStore {
@@ -85,6 +88,42 @@ impl SecureStore {
     pub fn key(&self) -> &[u8; 32] {
         &self.key
     }
+
+    /// Encrypt text and return as base64 string
+    pub fn encrypt_text(&self, text: &str) -> Result<String, CryptoError> {
+        let encrypted = self.encrypt(text.as_bytes())?;
+        Ok(BASE64.encode(&encrypted))
+    }
+
+    /// Decrypt base64-encoded ciphertext and return as string
+    pub fn decrypt_text(&self, base64_ciphertext: &str) -> Result<String, CryptoError> {
+        let ciphertext = BASE64
+            .decode(base64_ciphertext)
+            .map_err(|_| CryptoError::Base64DecodeFailed)?;
+        let plaintext = self.decrypt(&ciphertext)?;
+        String::from_utf8(plaintext).map_err(|_| CryptoError::DecryptionFailed)
+    }
+
+    /// Create a SecureStore from machine-specific information
+    pub fn from_machine_id(salt: &[u8; SALT_LEN]) -> Result<Self, CryptoError> {
+        let machine_id = get_machine_id();
+        Self::from_password(&machine_id, salt)
+    }
+}
+
+/// Get a machine-specific identifier (username + computername/hostname)
+fn get_machine_id() -> String {
+    let username = std::env::var("USERNAME")
+        .or_else(|_| std::env::var("USER"))
+        .unwrap_or_else(|_| "default_user".to_string());
+
+    // Try COMPUTERNAME (Windows) or HOSTNAME (Linux/Mac) from environment
+    let hostname = std::env::var("COMPUTERNAME")
+        .or_else(|_| std::env::var("HOSTNAME"))
+        .or_else(|_| std::env::var("HOST"))
+        .unwrap_or_else(|_| "default_host".to_string());
+
+    format!("clitter_{}_{}", username, hostname)
 }
 
 #[cfg(test)]

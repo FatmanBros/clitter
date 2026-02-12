@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use thiserror::Error;
 use uuid::Uuid;
 
+use crate::crypto::SecureStore;
 use crate::types::{
     Category, ClipboardContent, ClipboardData, Group, Position, Size, WhiteboardItem,
     WhiteboardState,
@@ -19,12 +20,15 @@ pub enum StorageError {
     Database(#[from] sqlx::Error),
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
+    #[error("Crypto error: {0}")]
+    Crypto(#[from] crate::crypto::secure_store::CryptoError),
 }
 
 pub struct PersistentStorage {
     pool: Pool<Sqlite>,
     #[allow(dead_code)]
     data_dir: PathBuf,
+    crypto: SecureStore,
 }
 
 impl PersistentStorage {
@@ -46,7 +50,39 @@ impl PersistentStorage {
         // Run migrations
         Self::run_migrations(&pool).await?;
 
-        Ok(Self { pool, data_dir })
+        // Initialize or load encryption key
+        let crypto = Self::init_crypto(&pool).await?;
+
+        Ok(Self { pool, data_dir, crypto })
+    }
+
+    async fn init_crypto(pool: &Pool<Sqlite>) -> Result<SecureStore, StorageError> {
+        // Check if salt exists in encryption_config
+        let row = sqlx::query("SELECT salt FROM encryption_config WHERE id = 1")
+            .fetch_optional(pool)
+            .await?;
+
+        let salt: [u8; 32] = if let Some(row) = row {
+            let salt_bytes: Vec<u8> = row.get("salt");
+            salt_bytes.try_into().map_err(|_| StorageError::NoHomeDir)?
+        } else {
+            // Generate new salt and save it
+            let salt = SecureStore::generate_salt();
+            let verification = "clitter_verification";
+
+            sqlx::query(
+                "INSERT INTO encryption_config (id, salt, verification_hash, created_at) VALUES (1, ?, ?, ?)"
+            )
+            .bind(salt.as_slice())
+            .bind(verification)
+            .bind(chrono::Utc::now().to_rfc3339())
+            .execute(pool)
+            .await?;
+
+            salt
+        };
+
+        Ok(SecureStore::from_machine_id(&salt)?)
     }
 
     async fn run_migrations(pool: &Pool<Sqlite>) -> Result<(), StorageError> {
@@ -179,29 +215,43 @@ impl PersistentStorage {
         let (data_type, text_content, text_preview, image_base64, image_width, image_height, image_format) =
             match &content.data {
                 ClipboardData::Text { text, preview } => {
-                    ("text", Some(text.clone()), Some(preview.clone()), None, None, None, None)
+                    // Encrypt text content
+                    let encrypted_text = self.crypto.encrypt_text(text)?;
+                    let encrypted_preview = self.crypto.encrypt_text(preview)?;
+                    ("text", Some(encrypted_text), Some(encrypted_preview), None, None, None, None)
                 }
                 ClipboardData::Image {
                     base64,
                     width,
                     height,
                     format,
-                } => (
-                    "image",
-                    None,
-                    None,
-                    Some(base64.clone()),
-                    Some(*width as i64),
-                    Some(*height as i64),
-                    Some(format.clone()),
-                ),
+                } => {
+                    // Encrypt image data
+                    let encrypted_base64 = self.crypto.encrypt_text(base64)?;
+                    (
+                        "image",
+                        None,
+                        None,
+                        Some(encrypted_base64),
+                        Some(*width as i64),
+                        Some(*height as i64),
+                        Some(format.clone()),
+                    )
+                }
             };
+
+        // Encrypt source if present
+        let encrypted_source = content
+            .source
+            .as_ref()
+            .map(|s| self.crypto.encrypt_text(s))
+            .transpose()?;
 
         sqlx::query(
             r#"
             INSERT OR REPLACE INTO clipboard_contents
-            (id, category, data_type, text_content, text_preview, image_base64, image_width, image_height, image_format, source, copied_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, category, data_type, text_content, text_preview, image_base64, image_width, image_height, image_format, source, copied_at, is_encrypted)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             "#,
         )
         .bind(content.id.to_string())
@@ -213,7 +263,7 @@ impl PersistentStorage {
         .bind(image_width)
         .bind(image_height)
         .bind(image_format)
-        .bind(&content.source)
+        .bind(encrypted_source)
         .bind(content.copied_at.to_rfc3339())
         .execute(&self.pool)
         .await?;
@@ -342,18 +392,26 @@ impl PersistentStorage {
 
             let data_type: String = row.get("data_type");
             let data = if data_type == "image" {
+                let encrypted_base64 = row.get::<Option<String>, _>("image_base64").unwrap_or_default();
+                let base64 = self.crypto.decrypt_text(&encrypted_base64).unwrap_or_default();
                 ClipboardData::Image {
-                    base64: row.get::<Option<String>, _>("image_base64").unwrap_or_default(),
+                    base64,
                     width: row.get::<Option<i64>, _>("image_width").unwrap_or(0) as u32,
                     height: row.get::<Option<i64>, _>("image_height").unwrap_or(0) as u32,
                     format: row.get::<Option<String>, _>("image_format").unwrap_or_default(),
                 }
             } else {
-                ClipboardData::Text {
-                    text: row.get::<Option<String>, _>("text_content").unwrap_or_default(),
-                    preview: row.get::<Option<String>, _>("text_preview").unwrap_or_default(),
-                }
+                let encrypted_text = row.get::<Option<String>, _>("text_content").unwrap_or_default();
+                let encrypted_preview = row.get::<Option<String>, _>("text_preview").unwrap_or_default();
+                let text = self.crypto.decrypt_text(&encrypted_text).unwrap_or_default();
+                let preview = self.crypto.decrypt_text(&encrypted_preview).unwrap_or_default();
+                ClipboardData::Text { text, preview }
             };
+
+            let encrypted_source: Option<String> = row.get("source");
+            let source = encrypted_source
+                .map(|s| self.crypto.decrypt_text(&s).ok())
+                .flatten();
 
             let content = ClipboardContent {
                 id: content_id,
@@ -362,7 +420,7 @@ impl PersistentStorage {
                 copied_at: chrono::DateTime::parse_from_rfc3339(row.get("copied_at"))
                     .map(|dt| dt.with_timezone(&chrono::Utc))
                     .unwrap_or_else(|_| chrono::Utc::now()),
-                source: row.get("source"),
+                source,
             };
 
             let item = WhiteboardItem {

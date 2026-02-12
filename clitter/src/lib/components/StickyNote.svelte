@@ -2,7 +2,7 @@
   import { onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { Image, Type, Hash, Lock } from "lucide-svelte";
+  import { Image, Type, Hash, Lock, Link } from "lucide-svelte";
   import { whiteboardState, matchedIds, isFiltering } from "$lib/stores/whiteboard";
   import { showContextMenu } from "$lib/stores/ui";
   import type { WhiteboardItem } from "$lib/types";
@@ -19,6 +19,7 @@
     image: Image,
     numeric: Hash,
     secure: Lock,
+    url: Link,
   };
 
   // Clean up mouse listeners if component is destroyed while dragging
@@ -120,6 +121,7 @@
     image: "category-image",
     numeric: "category-numeric",
     secure: "category-secure",
+    url: "category-url",
   }[item.content.category];
   $: isDimmed = $isFiltering && !$matchedIds.has(item.id);
 </script>
@@ -203,6 +205,11 @@
   .category-secure {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .category-url {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
   }
 
   .shortcut-badge {

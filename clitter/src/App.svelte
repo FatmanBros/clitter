@@ -3,7 +3,7 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Grid3x3, X, Settings } from "lucide-svelte";
+  import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Image, Type, Hash, Lock, Link, Grid3x3, X, Settings } from "lucide-svelte";
 
   import ClipboardList from "$lib/components/ClipboardList.svelte";
   import Whiteboard from "$lib/components/Whiteboard.svelte";

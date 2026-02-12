@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { Image, Type, Hash, Lock } from "lucide-svelte";
+  import { Image, Type, Hash, Lock, Link } from "lucide-svelte";
   import type { ClipboardContent } from "$lib/types";
 
   export let item: ClipboardContent;
@@ -14,6 +14,7 @@
     image: Image,
     numeric: Hash,
     secure: Lock,
+    url: Link,
   };
 
   async function handleClick() {
