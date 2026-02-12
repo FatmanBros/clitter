@@ -103,7 +103,8 @@
   function getPreview(): string {
     if (item.content.data.type === "text") {
       if (item.content.category === "secure") {
-        return "••••••••••••";
+        const prefix = item.content.data.text.substring(0, 3);
+        return prefix + "••••••••••";
       }
       const text = item.content.data.text;
       // If there's a label, show truncated value (10 chars)

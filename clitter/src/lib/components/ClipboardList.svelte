@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { filteredHistory, canScrollUp, canScrollDown, listScrollOffset } from "$lib/stores/clipboard";
+  import { filteredHistory, canScrollUp, canScrollDown, listScrollOffset, selectedIndex } from "$lib/stores/clipboard";
   import { Clipboard, ChevronUp, ChevronDown } from "lucide-svelte";
   import ClipboardItem from "./ClipboardItem.svelte";
 </script>
@@ -13,7 +13,7 @@
   {/if}
 
   {#each $filteredHistory as item, index (item.id)}
-    <ClipboardItem {item} {index} />
+    <ClipboardItem {item} {index} selected={index === $selectedIndex} />
   {:else}
     <div class="empty-state">
       <Clipboard size={32} strokeWidth={1} />

@@ -11,7 +11,7 @@
   import ShortcutEditModal from "$lib/components/ShortcutEditModal.svelte";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
 
-  import { clipboardHistory, selectedCategory, filteredHistory, listScrollOffset, scrollListUp, scrollListDown, canScrollUp, canScrollDown } from "$lib/stores/clipboard";
+  import { clipboardHistory, selectedCategory, filteredHistory, listScrollOffset, scrollListUp, scrollListDown, canScrollUp, canScrollDown, selectedIndex } from "$lib/stores/clipboard";
   import { currentView, contextMenu, hideContextMenu, openSettings, windowSizes, updateWindowSize, windowPositions, updateWindowPosition, shortcutEditModal, settingsModal, themeMode } from "$lib/stores/ui";
   import {
     whiteboardState,
@@ -125,9 +125,14 @@
         currentView.set("list");
         selectedCategory.set(null);
         listScrollOffset.set(0); // Reset scroll position
+        selectedIndex.set(0); // Focus first item
         // Apply saved position for list view
         const pos = $windowPositions.list;
         currentWindow.setPosition(new LogicalPosition(pos.x, pos.y));
+      } else if (!focused) {
+        // Hide window when focus is lost
+        wasHidden = true;
+        currentWindow.hide();
       }
     });
 
@@ -231,20 +236,36 @@
       }
     }
 
+    const maxIndex = $filteredHistory.length - 1;
+
     switch (event.key) {
-      case "ArrowLeft":
-        selectedCategory.set("image");
+      case "ArrowUp":
+        if ($selectedIndex > 0) {
+          selectedIndex.update(i => i - 1);
+        } else {
+          // At top of list, go to whiteboard
+          currentView.set("whiteboard");
+        }
         event.preventDefault();
         break;
       case "ArrowDown":
-        selectedCategory.set("text");
+        if ($selectedIndex < maxIndex) {
+          selectedIndex.update(i => i + 1);
+        }
+        event.preventDefault();
+        break;
+      case "ArrowLeft":
+        selectedCategory.set("image");
         event.preventDefault();
         break;
       case "ArrowRight":
         selectedCategory.set("numeric");
         event.preventDefault();
         break;
-      case "ArrowUp":
+      case "Enter":
+        copyHistoryItem($selectedIndex);
+        event.preventDefault();
+        break;
       case "w":
       case "W":
         currentView.set("whiteboard");
@@ -253,6 +274,11 @@
       case "a":
       case "A":
         selectedCategory.set(null);
+        event.preventDefault();
+        break;
+      case "t":
+      case "T":
+        selectedCategory.set("text");
         event.preventDefault();
         break;
       case "s":

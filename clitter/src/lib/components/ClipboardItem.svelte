@@ -6,6 +6,7 @@
 
   export let item: ClipboardContent;
   export let index: number;
+  export let selected: boolean = false;
 
   let isDragging = false;
 
@@ -39,9 +40,11 @@
 
   function getPreview(): string {
     if (item.data.type === "text") {
-      return item.category === "secure"
-        ? "••••••••••••"
-        : item.data.preview;
+      if (item.category === "secure") {
+        const prefix = item.data.preview.substring(0, 3);
+        return prefix + "••••••••••";
+      }
+      return item.data.preview;
     }
     return "";
   }
@@ -53,6 +56,7 @@
   class="clipboard-item"
   class:dragging={isDragging}
   class:secure={item.category === "secure"}
+  class:selected
   role="button"
   tabindex="0"
   draggable="true"
@@ -111,6 +115,12 @@
   .clipboard-item.secure {
     border-color: rgba(239, 68, 68, 0.2);
     background: rgba(239, 68, 68, 0.05);
+  }
+
+  .clipboard-item.selected {
+    border-color: var(--accent);
+    background: var(--bg-active);
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .index-badge {

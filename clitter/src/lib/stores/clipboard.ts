@@ -10,9 +10,13 @@ export const selectedCategory = writable<Category | null>(null);
 // Scroll offset for list view (how many items to skip)
 export const listScrollOffset = writable<number>(0);
 
-// Reset scroll offset when category changes
+// Selected item index in list view
+export const selectedIndex = writable<number>(0);
+
+// Reset scroll offset and selected index when category changes
 selectedCategory.subscribe(() => {
   listScrollOffset.set(0);
+  selectedIndex.set(0);
 });
 
 // All items matching current filter (not limited)
