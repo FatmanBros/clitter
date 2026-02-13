@@ -31,6 +31,7 @@
 
   let lastAppliedView: ViewMode | null = null;
   let isResizing = false;
+  let isMoving = false;
   let wasHidden = true;
   let LogicalSize: typeof import("@tauri-apps/api/dpi").LogicalSize;
   let LogicalPosition: typeof import("@tauri-apps/api/dpi").LogicalPosition;
@@ -109,6 +110,7 @@
     // Save window position when moved
     let moveTimeout: ReturnType<typeof setTimeout>;
     unlistenMoved = await currentWindow.onMoved(async ({ payload: physicalPosition }) => {
+      isMoving = true;
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const scaleFactor = await currentWindow.scaleFactor();
@@ -116,6 +118,7 @@
         const logicalY = Math.round(physicalPosition.y / scaleFactor);
         const mode = $currentView;
         updateWindowPosition(mode, logicalX, logicalY);
+        isMoving = false;
       }, 200);
     });
 
@@ -129,8 +132,8 @@
         // Apply saved position for list view
         const pos = $windowPositions.list;
         currentWindow.setPosition(new LogicalPosition(pos.x, pos.y));
-      } else if (!focused) {
-        // Hide window when focus is lost
+      } else if (!focused && !isResizing && !isMoving) {
+        // Hide window when focus is lost (but not during resize/move)
         wasHidden = true;
         currentWindow.hide();
       }
